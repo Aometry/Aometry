@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  aometry:
+    build: .
+    container_name: aometry
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      - ./installed_modules:/usr/src/app/installed_modules
+      - ./logs:/usr/src/app/logs

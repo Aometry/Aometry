@@ -1,37 +1,61 @@
 {
   "name": "aometry",
-  "version": "24.10.0",
-  "description": "Custom discord bot for the City Loopers server",
+  "version": "25.12.1",
+  "description": "Modular discord bot platform built with discord.js",
   "main": "index.js",
   "scripts": {
+    "dev": "npm run lint && nodemon",
+    "start": "node dist/src/index.js",
+    "build": "npm run lint && tsc && tsc-alias",
+    "lint": "eslint src/**/*.ts --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CityLoopers/Aometry.git"
+    "url": "git+https://github.com/Aometry/Aometry.git"
   },
   "author": "Finneh",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/CityLoopers/Aometry/issues"
+    "url": "https://github.com/Aometry/Aometry/issues"
   },
-  "homepage": "https://github.com/CityLoopers/Aometry#readme",
+  "homepage": "https://github.com/Aometry/Aometry#readme",
   "dependencies": {
-    "@tensorflow-models/toxicity": "^1.2.2",
-    "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
-    "@tensorflow/tfjs-node": "^4.21.0",
     "ascii-table": "^0.0.9",
-    "discord.js": "^14.16.3",
+    "better-sqlite3": "^12.5.0",
+    "boxen": "^4.2.0",
+    "chalk": "^4.1.2",
+    "crypto": "^1.0.1",
+    "discord.js": "^14.25.1",
     "dotenv": "^16.4.5",
-    "glob": "^10.4.5"
+    "figlet": "^1.9.4",
+    "glob": "^10.4.5",
+    "gradient-string": "^3.0.0",
+    "inquirer": "^8.2.6",
+    "moment": "^2.30.1",
+    "mongoose": "^9.0.0",
+    "nodemon": "^3.1.11",
+    "rimraf": "^6.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/figlet": "^1.7.0",
+    "@types/glob": "^8.1.0",
+    "@types/gradient-string": "^1.1.6",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
     "eslint": "^8.57.1",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.6.0",
-    "globals": "^15.11.0"
+    "globals": "^15.11.0",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
   }
 }

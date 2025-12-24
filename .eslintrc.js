@@ -4,7 +4,12 @@ module.exports = {
     commonjs: true,
     es2021: true
   },
-  extends: 'standard',
+  extends: [
+    'standard',
+    'plugin:@typescript-eslint/recommended'
+  ],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
   overrides: [
     {
       env: {
@@ -19,9 +24,16 @@ module.exports = {
     }
   ],
   parserOptions: {
-    ecmaVersion: 'latest'
+    ecmaVersion: 'latest',
+    sourceType: 'module'
   },
   rules: {
-    'no-unused-vars': 'off'
+    'no-unused-vars': 'off',
+    'semi': ['error', 'never'],
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-require-imports': 'off',
+    'no-use-before-define': 'off'
   }
 }

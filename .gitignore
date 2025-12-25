@@ -13,3 +13,4 @@
 
 *.db
 
+.command_cache.json

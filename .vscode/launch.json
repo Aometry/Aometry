@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug: Launch Bot",
+            "skipFiles": ["<node_internals>/**"],
+            "program": "${workspaceFolder}/src/index.ts",
+            "runtimeArgs": ["-r", "ts-node/register"],
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Debug: Attach",
+            "port": 9229,
+            "restart": true
+        }
+    ]
+}

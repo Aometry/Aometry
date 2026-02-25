@@ -40,16 +40,17 @@ export default async function handleNcapInteraction (
 
   // 2. Handle Buttons
   if (interaction.isButton()) {
-    const customId = interaction.customId
-    if (customId.startsWith('ncap_approve_')) {
-      await handleApprove(interaction, client, db)
-    } else if (customId.startsWith('ncap_object_')) {
-      await handleObject(interaction, client, db)
-    } else if (customId.startsWith('ncap_dismiss_')) {
-      await handleDismiss(interaction, client, db)
-    } else if (customId.startsWith('ncap_validate_')) {
-      await handleValidate(interaction, client, db)
+    const handlers: Record<string, Function> = {
+      approve: handleApprove,
+      object: handleObject,
+      dismiss: handleDismiss,
+      validate: handleValidate
     }
+
+    const action = Object.keys(handlers).find((key) =>
+      interaction.customId.startsWith(`ncap_${key}_`)
+    )
+    if (action) await handlers[action](interaction, client, db)
   }
 }
 
@@ -156,12 +157,12 @@ async function handleModalSubmit (
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`ncap_approve_${ncapId}`)
+      .setCustomId(`ncap_approve_${ncapId}_${interaction.user.id}`)
       .setLabel('Approve')
       .setStyle(ButtonStyle.Success)
       .setEmoji('✅'),
     new ButtonBuilder()
-      .setCustomId(`ncap_object_${ncapId}`)
+      .setCustomId(`ncap_object_${ncapId}_${interaction.user.id}`)
       .setLabel('Object')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🛑')
@@ -206,22 +207,24 @@ async function handleApprove (
   client: BotClient,
   db: any
 ) {
-  const ncapId = interaction.customId.replace('ncap_approve_', '')
+  const parts = interaction.customId.split('_')
+  const ncapId = parts[2]
+  const authorId = parts[3]
+
+  // Native feature: check embedded authorId to save a DB query
+  if (authorId === interaction.user.id) {
+    await interaction.reply({
+      content: '❌ You cannot approve your own post.',
+      flags: MessageFlags.Ephemeral
+    })
+    return
+  }
 
   // Get Post
   const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId)
   if (!post) {
     await interaction.reply({
       content: 'Post not found in DB',
-      flags: MessageFlags.Ephemeral
-    })
-    return
-  }
-
-  // Self-Approval Check
-  if (post.author_id === interaction.user.id && !TESTING_MODE) {
-    await interaction.reply({
-      content: '❌ You cannot approve your own post.',
       flags: MessageFlags.Ephemeral
     })
     return
@@ -302,7 +305,17 @@ async function handleObject (
   client: BotClient,
   db: any
 ) {
-  const ncapId = interaction.customId.replace('ncap_object_', '')
+  const parts = interaction.customId.split('_')
+  const ncapId = parts[2]
+  const authorId = parts[3]
+
+  if (authorId === interaction.user.id) {
+    await interaction.reply({
+      content: '❌ You cannot object to your own post.',
+      flags: MessageFlags.Ephemeral
+    })
+    return
+  }
 
   // 1. Pause Timer
   // In strict spec: "Object Reaction -> pause_timer()"

@@ -117,6 +117,16 @@ export default class DatabaseManager {
     `)
 
     db.exec(`
+      CREATE TABLE IF NOT EXISTS role_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT,
+        name TEXT,
+        type TEXT,
+        role_ids TEXT
+      );
+    `)
+
+    db.exec(`
       CREATE TABLE IF NOT EXISTS motions (
         id TEXT PRIMARY KEY,
         type TEXT,

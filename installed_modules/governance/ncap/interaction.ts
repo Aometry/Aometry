@@ -21,8 +21,22 @@ import {
 } from '@installed/governance/ChannelUtils'
 import { successEmbed, errorEmbed } from '@/utils/responses'
 import moment from 'moment'
+import Database from 'better-sqlite3'
 
 const TESTING_MODE = true
+
+export interface NCAPPost {
+  id: string;
+  channel_id: string;
+  message_id: string;
+  content: string;
+  status: string;
+  timer_minutes: number;
+  created_at: string;
+  target_time: string;
+  urgency: string;
+  author_id: string;
+}
 
 export default async function handleNcapInteraction (
   interaction: Interaction,
@@ -31,11 +45,9 @@ export default async function handleNcapInteraction (
   const db = client.databaseManager.getSqlite()
 
   // 1. Handle Modal Submission (from Context Menu)
-  if (interaction.isModalSubmit()) {
-    const customId = interaction.customId
-    if (customId.startsWith('ncap_submit_modal_')) {
-      await handleModalSubmit(interaction, client, db)
-    }
+  if (interaction.isModalSubmit() && interaction.customId.startsWith('ncap_submit_modal_')) {
+    await handleModalSubmit(interaction, client, db)
+    return
   }
 
   // 2. Handle Buttons
@@ -57,22 +69,26 @@ export default async function handleNcapInteraction (
 async function handleModalSubmit (
   interaction: ModalSubmitInteraction,
   client: BotClient,
-  db: any
+  db: Database.Database
 ) {
-  // Use 'any' cast for fields if types aren't fully updated in local definition yet to support getStringSelectValues
-  const fields = interaction.fields as any
+  // Use a custom interface to bypass missing type definitions in local Discord.js for extended components
+  interface ExtendedFields {
+    getStringSelectValues(id: string): string[] | undefined;
+    getUploadedFiles?(id: string): import('discord.js').Collection<string, import('discord.js').Attachment> | undefined;
+  }
+  const fields = interaction.fields as unknown as typeof interaction.fields & ExtendedFields
 
   const channelVal = fields.getStringSelectValues('channel')?.[0] || 'socmed'
   const urgencyVal = fields.getStringSelectValues('urgency')?.[0] || 'standard'
-  const content = fields.getTextInputValue('content')
+  const content = interaction.fields.getTextInputValue('content')
 
   // File Upload handling
-  let media = null
+  let media: import('discord.js').Attachment | null = null
   try {
     const mediaFiles = fields.getUploadedFiles
       ? fields.getUploadedFiles('media')
       : null
-    media = mediaFiles && mediaFiles.length > 0 ? mediaFiles[0] : null
+    media = mediaFiles && mediaFiles.size > 0 ? (mediaFiles.first() || null) : null
   } catch (err) {
     // If field doesn't exist or other error, proceed without media
   }
@@ -114,7 +130,7 @@ async function handleModalSubmit (
   const currentYear = moment().year()
   const lastPost = db
     .prepare('SELECT id FROM ncap_posts ORDER BY created_at DESC LIMIT 1')
-    .get()
+    .get() as { id: string } | undefined
   let nextNum = 1
   if (lastPost) {
     const parts = lastPost.id.split('-')
@@ -205,7 +221,7 @@ async function handleModalSubmit (
 async function handleApprove (
   interaction: ButtonInteraction,
   client: BotClient,
-  db: any
+  db: Database.Database
 ) {
   const parts = interaction.customId.split('_')
   const ncapId = parts[2]
@@ -221,7 +237,7 @@ async function handleApprove (
   }
 
   // Get Post
-  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId)
+  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId) as NCAPPost | undefined
   if (!post) {
     await interaction.reply({
       content: 'Post not found in DB',
@@ -303,7 +319,7 @@ async function handleApprove (
 async function handleObject (
   interaction: ButtonInteraction,
   client: BotClient,
-  db: any
+  db: Database.Database
 ) {
   const parts = interaction.customId.split('_')
   const ncapId = parts[2]
@@ -329,7 +345,7 @@ async function handleObject (
   )
 
   // 2. Create Thread
-  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId)
+  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId) as NCAPPost | undefined
   if (!post) {
     return interaction.reply({
       content: 'Post not found',
@@ -424,7 +440,7 @@ async function handleObject (
 async function handleDismiss (
   interaction: ButtonInteraction,
   client: BotClient,
-  db: any
+  db: Database.Database
 ) {
   const ncapId = interaction.customId.replace('ncap_dismiss_', '')
   // Logic: Count votes, if >= 2 dismiss.
@@ -455,9 +471,15 @@ async function handleDismiss (
   )
   db.prepare(
     'UPDATE objection_hearings SET status = ? WHERE post_id = ? AND status = ?'
-  ).run('dismissed', ncapId, 'hearing_open')
+  ).run('dismissed',    ncapId,
+    'hearing_open'
+  )
 
-  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId)
+  const post = db.prepare('SELECT * FROM ncap_posts WHERE id = ?').get(ncapId) as NCAPPost | undefined
+  if (!post) {
+    await interaction.reply({ content: 'Post not found', flags: MessageFlags.Ephemeral })
+    return
+  }
   // Resume Timer logic: Target Time needs to be pushed forward by duration of pause?
   // Spec 4.5: "Main timer resuming from 1:45:00. Target: 17:15".
   // So we calculate new target based on `timer_minutes` remaining + now.
@@ -479,7 +501,7 @@ async function handleDismiss (
 async function handleValidate (
   interaction: ButtonInteraction,
   client: BotClient,
-  db: any
+  db: Database.Database
 ) {
   // const ncapId = interaction.customId.replace('ncap_validate_', '')
   // Logic: Double Timer

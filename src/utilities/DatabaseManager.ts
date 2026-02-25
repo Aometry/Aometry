@@ -1,5 +1,4 @@
 import { connect, Connection } from 'mongoose'
-// @ts-ignore
 import Database from 'better-sqlite3'
 import path from 'path'
 import Logger from './Logger'
@@ -10,8 +9,8 @@ type DatabaseType = 'MONGO' | 'SQLITE' | 'NONE';
 export default class DatabaseManager {
   private config: Config
   public type: DatabaseType = 'NONE'
-  public connection: Connection | any = null
-  private _sqliteConnection: any = null
+  public connection: Connection | Database.Database | null = null
+  private _sqliteConnection: Database.Database | null = null
 
   constructor (config: Config) {
     this.config = config
@@ -31,8 +30,9 @@ export default class DatabaseManager {
         // Let's ensure SQLite is initialized for the governance module regardless of Mongo.
         this.initSqlite()
         return
-      } catch (err: any) {
-        Logger.warning(`MongoDB connection failed: ${err.message}`, '🗄️')
+      } catch (err: unknown) {
+        const error = err as Error;
+        Logger.warning(`MongoDB connection failed: ${error.message}`, '🗄️')
         Logger.info('Falling back to SQLite (Main)...')
       }
     } else {
@@ -69,13 +69,14 @@ export default class DatabaseManager {
 
       Logger.success('SQLite database initialized', 'cj')
       return sqlite
-    } catch (err: any) {
-      Logger.error(`SQLite initialization failed: ${err.message}`, '🗄️')
+    } catch (err: unknown) {
+      const error = err as Error;
+      Logger.error(`SQLite initialization failed: ${error.message}`, '🗄️')
       if (this.type === 'NONE') this.type = 'NONE'
     }
   }
 
-  private initTables (db: any) {
+  private initTables (db: Database.Database) {
     // NCAP Tables
     db.exec(`
       CREATE TABLE IF NOT EXISTS ncap_posts (
@@ -165,9 +166,9 @@ export default class DatabaseManager {
    * Returns the SQLite database instance.
    * If the main connection is MongoDB, this will create/return a separate SQLite instance.
    */
-  public getSqlite (): any {
+  public getSqlite (): Database.Database {
     if (this.type === 'SQLITE') {
-      return this.connection
+      return this.connection as Database.Database
     }
     // If Mongo is main, we need to ensure we have the SQLite instance.
     // For simplicity, let's re-open or return a cached one.

@@ -1,5 +1,42 @@
-import { Events, GuildMember, PartialGuildMember } from 'discord.js'
+import { Events, GuildMember, PartialGuildMember, Role, Collection } from 'discord.js'
 import { BotClient, Event } from '@/types/discord'
+
+interface RoleSet {
+  type: 'GROUP' | 'UNIQUE';
+  role_ids: string;
+}
+
+function processRoles(
+  triggerRoles: Collection<string, Role>,
+  isAdded: boolean,
+  roleSets: RoleSet[],
+  newMember: GuildMember | PartialGuildMember,
+  rolesToAdd: Set<string>,
+  rolesToRemove: Set<string>
+) {
+  for (const role of triggerRoles.values()) {
+    for (const set of roleSets) {
+      const roleIds: string[] = JSON.parse(set.role_ids)
+      if (!roleIds.includes(role.id)) continue
+
+      for (const id of roleIds) {
+        if (id === role.id) continue
+
+        if (isAdded) {
+          if (set.type === 'GROUP' && !newMember.roles.cache.has(id)) {
+            rolesToAdd.add(id)
+          } else if (set.type === 'UNIQUE' && newMember.roles.cache.has(id)) {
+            rolesToRemove.add(id)
+          }
+        } else {
+          if (set.type === 'GROUP' && newMember.roles.cache.has(id)) {
+            rolesToRemove.add(id)
+          }
+        }
+      }
+    }
+  }
+}
 
 const event: Event<Events.GuildMemberUpdate> = {
   name: Events.GuildMemberUpdate,
@@ -14,10 +51,10 @@ const event: Event<Events.GuildMemberUpdate> = {
 
     const db = client.databaseManager.getSqlite()
 
-    let roleSets
+    let roleSets: RoleSet[]
     try {
-      roleSets = db.prepare('SELECT type, role_ids FROM role_sets WHERE guild_id = ?').all(newMember.guild.id)
-    } catch (err) {
+      roleSets = db.prepare('SELECT type, role_ids FROM role_sets WHERE guild_id = ?').all(newMember.guild.id) as RoleSet[]
+    } catch (err: unknown) {
       // Table might not exist or other DB errors
       return
     }
@@ -27,48 +64,9 @@ const event: Event<Events.GuildMemberUpdate> = {
     const rolesToAdd = new Set<string>()
     const rolesToRemove = new Set<string>()
 
-    // Handle added roles constraint
-    for (const addedRole of addedRoles.values()) {
-      for (const set of roleSets) {
-        const roleIds: string[] = JSON.parse(set.role_ids)
-
-        if (roleIds.includes(addedRole.id)) {
-          if (set.type === 'GROUP') {
-            // Add all other roles in the group
-            for (const id of roleIds) {
-              if (id !== addedRole.id && !newMember.roles.cache.has(id)) {
-                rolesToAdd.add(id)
-              }
-            }
-          } else if (set.type === 'UNIQUE') {
-            // Remove all other roles in the unique set that the user CURRENTLY has
-            for (const id of roleIds) {
-              if (id !== addedRole.id && newMember.roles.cache.has(id)) {
-                rolesToRemove.add(id)
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Handle removed roles constraint
-    for (const removedRole of removedRoles.values()) {
-      for (const set of roleSets) {
-        const roleIds: string[] = JSON.parse(set.role_ids)
-
-        if (roleIds.includes(removedRole.id)) {
-          if (set.type === 'GROUP') {
-            // Remove all other roles in the group
-            for (const id of roleIds) {
-              if (id !== removedRole.id && newMember.roles.cache.has(id)) {
-                rolesToRemove.add(id)
-              }
-            }
-          }
-        }
-      }
-    }
+    // Process constraints
+    processRoles(addedRoles, true, roleSets, newMember, rolesToAdd, rolesToRemove)
+    processRoles(removedRoles, false, roleSets, newMember, rolesToAdd, rolesToRemove)
 
     try {
       if (rolesToRemove.size > 0) {
@@ -79,10 +77,12 @@ const event: Event<Events.GuildMemberUpdate> = {
         const updatedMember = await newMember.guild.members.fetch(newMember.id)
         await updatedMember.roles.add(Array.from(rolesToAdd), 'Role Set constraints')
       }
-    } catch (err: any) {
-      console.error(`Error applying Role Sets for user ${newMember.id}:`, err)
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error(`Error applying Role Sets for user ${newMember.id}:`, error.message)
     }
   }
 }
 
 export default event
+

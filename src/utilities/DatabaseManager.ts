@@ -149,6 +149,17 @@ export default class DatabaseManager {
         FOREIGN KEY(motion_id) REFERENCES motions(id)
       );
     `)
+
+    // Ticketing Tables
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tickets (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        thread_id TEXT,
+        status TEXT,
+        created_at DATETIME
+      );
+    `)
   }
 
   /**

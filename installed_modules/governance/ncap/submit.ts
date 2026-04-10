@@ -1,112 +1,138 @@
+/**
+ * NCAP Submission Command
+ * Per Constitution Rule 49(2) - NCAP Submission Requirements
+ */
+
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
   ModalBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
+  ActionRowBuilder,
   TextInputBuilder,
   TextInputStyle,
-  LabelBuilder,
-  FileUploadBuilder,
 } from "discord.js";
 import { BotClient, Command } from "@/types/discord";
-import {
-  getChannelCategory,
-  ChannelCategory,
-} from "@installed/governance/ChannelUtils";
-import { errorEmbed, successEmbed } from "@/utils/responses";
-import moment from "moment";
+import { errorEmbed } from "@/utils/responses";
 
-// Define the command
 const command: Command = {
   data: new SlashCommandBuilder()
-    .setName("ncap-submit")
-    .setDescription("Submit content for NCAP authorization"),
+    .setName("ncap")
+    .setDescription("Submit a proposal for NCAP (Negative Consent Approval Protocol) authorization")
+    .addStringOption(option =>
+      option
+        .setName("category")
+        .setDescription("NCAP category (determines default timer and approver pool)")
+        .setRequired(true)
+        .addChoices(
+          { name: "Communications (Urgent) - 4h", value: "comm_urgent" },
+          { name: "Communications (Routine) - 12h", value: "comm_routine" },
+          { name: "Operations (Routine) - 24h", value: "ops_routine" },
+          { name: "Policy (Significant) - 48h", value: "policy_sig" },
+          { name: "Financial (Routine) - 24h", value: "fin_routine" },
+          { name: "Financial (Significant) - 48h", value: "fin_sig" },
+          { name: "Governance (Major) - 72h", value: "gov_major" }
+        )
+    )
+    .addStringOption(option =>
+      option
+        .setName("approver-pool")
+        .setDescription("Who should approve this? (defaults to category default)")
+        .setRequired(false)
+        .addChoices(
+          { name: "Communications Working Group", value: "wg_comms" },
+          { name: "Policy Working Group", value: "wg_policy" },
+          { name: "Campaigns Working Group", value: "wg_campaigns" },
+          { name: "Committee", value: "committee" }
+        )
+    )
+    .addIntegerOption(option =>
+      option
+        .setName("timer-hours")
+        .setDescription("Initial timer in hours (overrides category default)")
+        .setRequired(false)
+        .setMinValue(1)
+        .setMaxValue(168) // 7 days max
+    )
+    .addNumberOption(option =>
+      option
+        .setName("spending")
+        .setDescription("Spending amount in AUD (for financial authorizations)")
+        .setRequired(false)
+        .setMinValue(0)
+    ),
 
   execute: async ({ interaction: interactionRaw, client }) => {
     const interaction = interactionRaw as ChatInputCommandInteraction;
 
-    // Build Modal
+    // Get options
+    const category = interaction.options.getString("category", true);
+    const approverPool = interaction.options.getString("approver-pool");
+    const timerHours = interaction.options.getInteger("timer-hours");
+    const spendingAmount = interaction.options.getNumber("spending");
+
+    // Build modal for detailed submission
     const modal = new ModalBuilder()
-      .setCustomId("ncap_submit_modal_slash")
-      .setTitle("Submit to NCAP");
+      .setCustomId(`ncap_submit_${category}_${Date.now()}`)
+      .setTitle("NCAP Submission");
 
-    // 1. Channel
-    const channelSelect = new StringSelectMenuBuilder()
-      .setCustomId("channel")
-      .setPlaceholder("Select Authorization Channel")
-      .addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel("Social Media")
-          .setValue("socmed")
-          .setDescription("#auth-socmed"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("General")
-          .setValue("general")
-          .setDescription("#auth-general")
-      )
-      .setRequired(true);
-
-    const channelLabel = new LabelBuilder()
-      .setLabel("Authorization Channel")
-      .setDescription("Where should this post be sent?")
-      .setStringSelectMenuComponent(channelSelect);
-
-    // 2. Urgency
-    const urgencySelect = new StringSelectMenuBuilder()
-      .setCustomId("urgency")
-      .setPlaceholder("Select Urgency Level")
-      .addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel("Standard (4h)")
-          .setValue("standard")
-          .setDescription("Normal priority"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("Urgent (2h)")
-          .setValue("urgent")
-          .setDescription("High priority"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("Complex (6h)")
-          .setValue("complex")
-          .setDescription("Requires in-depth review")
-      )
-      .setRequired(true);
-
-    const urgencyLabel = new LabelBuilder()
-      .setLabel("Urgency Level")
-      .setDescription("Determines the timer duration")
-      .setStringSelectMenuComponent(urgencySelect);
-
-    // 3. Content
-    const contentInput = new TextInputBuilder()
-      .setCustomId("content")
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Enter the content here...")
-      .setRequired(true);
-
-    const contentLabel = new LabelBuilder()
-      .setLabel("Content")
-      .setDescription("The main text content")
-      .setTextInputComponent(contentInput);
-
-    // 4. Media
-    const fileUpload = new FileUploadBuilder()
-      .setCustomId("media")
-      .setRequired(false); // Optional
-
-    const fileLabel = new LabelBuilder()
-      .setLabel("Attachment (Optional)")
-      .setDescription("Upload an image or file")
-      .setFileUploadComponent(fileUpload);
-
-    // Add components
-    (modal as any).addLabelComponents(
-      channelLabel,
-      urgencyLabel,
-      contentLabel,
-      fileLabel
+    // Title field (per Rule 49(2)(b)(i))
+    const titleRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("title")
+        .setLabel("Title")
+        .setPlaceholder("Short description of what's being authorized")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(200)
     );
 
+    // Description field (per Rule 49(2)(b)(i))
+    const descriptionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("description")
+        .setLabel("Description")
+        .setPlaceholder("Clear description of what's being authorized...")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(2000)
+    );
+
+    // Rationale field (per Rule 49(2)(b)(vi))
+    const rationaleRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("rationale")
+        .setLabel("Rationale & Root Axiom Alignment")
+        .setPlaceholder("How does this advance the Root Axiom? Why is this needed?")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false)
+        .setMaxLength(1000)
+    );
+
+    // Budget category (if financial)
+    const budgetRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("budget_category")
+        .setLabel("Budget Category (if financial)")
+        .setPlaceholder("e.g., Communications, Operations, Campaigns")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false)
+        .setMaxLength(100)
+    );
+
+    // Links to supporting documents (per Rule 49(2)(b)(vii))
+    const linksRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
+        .setCustomId("links")
+        .setLabel("Links (optional)")
+        .setPlaceholder("URLs to relevant documents or context (one per line)")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false)
+        .setMaxLength(500)
+    );
+
+    modal.addComponents(titleRow, descriptionRow, rationaleRow, budgetRow, linksRow);
+
+    // Store options in modal customId for retrieval on submit
     await interaction.showModal(modal);
   },
 };

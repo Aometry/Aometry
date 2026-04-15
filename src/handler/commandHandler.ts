@@ -8,6 +8,15 @@ import chalk from 'chalk'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import jiti from 'jiti'
+
+const isTs = __filename.endsWith('.ts')
+const load = jiti(__filename, {
+  alias: {
+    '@': path.join(process.cwd(), isTs ? 'src' : 'dist/src'),
+    '@installed': path.join(process.cwd(), 'installed_modules')
+  }
+})
 
 const CACHE_PATH = path.join(process.cwd(), '.command_cache.json')
 
@@ -90,9 +99,14 @@ export async function loadCommands (client: BotClient) {
       // Check if file modified
       if (!cached || cached.hash !== currentHash) {
         // File changed or new
-        delete require.cache[require.resolve(file)]
-        const imported = await import(file)
-        command = imported.default || imported
+        if (file.endsWith('.ts')) {
+          const imported = load(file)
+          command = imported.default || imported
+        } else {
+          delete require.cache[require.resolve(file)]
+          const imported = await import(file)
+          command = imported.default || imported
+        }
 
         // Update cache
         if (command.data) {
@@ -113,8 +127,12 @@ export async function loadCommands (client: BotClient) {
           commandCache[file] = { hash: currentHash, data: null }
         }
       } else {
-        // File unchanged, import from require cache (fast)
-        const imported = await import(file)
+        let imported
+        if (file.endsWith('.ts')) {
+          imported = load(file)
+        } else {
+          imported = await import(file)
+        }
         command = imported.default || imported
         // Even if file unchanged, we need to add to commandsArray for structure check comparison against TOTAL registry?
         // Actually, we use 'registryUpdateNeeded' flag. If no files changed structurally, and count is same...

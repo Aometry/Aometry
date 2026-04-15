@@ -1,6 +1,16 @@
 import { BotClient, Event } from '@/types/discord'
 import { loadFiles } from '@/utilities/fileLoader'
 import Logger from '@/utilities/Logger'
+import jiti from 'jiti'
+import path from 'path'
+
+const isTs = __filename.endsWith('.ts')
+const load = jiti(__filename, {
+  alias: {
+    '@': path.join(process.cwd(), isTs ? 'src' : 'dist/src'),
+    '@installed': path.join(process.cwd(), 'installed_modules')
+  }
+})
 // @ts-ignore
 import Ascii from 'ascii-table'
 /// <reference path="@/types/declarations.d.ts" />
@@ -31,10 +41,14 @@ export async function loadEvents (client: BotClient) {
 
   for (const file of files) {
     try {
-      // Clear cache for reload
-      delete require.cache[require.resolve(file)]
-
-      const imported = await import(file)
+      let imported
+      if (file.endsWith('.ts')) {
+        imported = load(file)
+      } else {
+        // Clear cache for reload
+        delete require.cache[require.resolve(file)]
+        imported = await import(file)
+      }
       const event: Event<any> = imported.default || imported
 
       const fileName = file.split('/').pop() || ''

@@ -12,17 +12,22 @@ export async function loadFiles (dirName: string): Promise<string[]> {
   // During dev (ts-node), we load .ts. During prod, we load .js.
 
   const isTs = __filename.endsWith('.ts')
-  const extension = isTs ? 'ts' : 'js'
 
   // If we are in production (.js), we should look in the dist folder for core files
   // assuming dirName starts with 'src' or 'installed_modules'.
   let baseDir = dirName
-  if (!isTs && (dirName.startsWith('src') || dirName.startsWith('installed_modules'))) {
+  // Only prepend dist/ if we are in production AND looking at core files (src/)
+  if (!isTs && dirName.startsWith('src')) {
     baseDir = `dist/${dirName}`
   }
 
+  // Look for both extensions if in production to support runtime-installed modules
+  const extension = isTs ? 'ts' : '{js,ts}'
+  // Use a negative lookbehind if possible or just filter later. 
+  // Glob doesn't support easy 'exclude' within the pattern for d.ts easily.
+  // Actually, Glob 10 supports ignore.
   const pattern = `${process.cwd().replace(/\\/g, '/')}/${baseDir}/**/*.${extension}`
 
-  const files = await glob(pattern)
+  const files = await glob(pattern, { ignore: '**/*.d.ts' })
   return files
 }

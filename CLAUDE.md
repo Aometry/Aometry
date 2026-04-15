@@ -18,6 +18,27 @@ Aometry is a modular Discord bot platform built with TypeScript and Discord.js.
 - **Safety:** Prioritize type safety and runtime stability.
 - **No Semicolons:** Follow the [Standard](https://standardjs.com/) code style.
 
+## Security Principles
+
+Aometry exposes a management API with direct control over bot configuration and
+installed modules. Treat it accordingly.
+
+- **Least privilege by default.** Every config option should default to the most
+  restrictive viable setting. Widen access explicitly, never as a convenience.
+- **Zero trust networking.** Assume the bot is publicly reachable. Do not rely on
+  network topology for security (e.g. "it's only on localhost" is not a substitute
+  for auth).
+- **Never default to wildcard CORS.** `ALLOWED_ORIGINS=*` is not an acceptable
+  default or fallback. If a connectivity problem arises, the fix is correct
+  configuration, not wider permissions.
+- **API key is the trust boundary.** All management endpoints require `X-API-KEY`.
+  Do not add unauthenticated endpoints without explicit justification.
+- **Setup wizard is localhost-only.** The setup server must never bind to `0.0.0.0`
+  except in Docker (where port mapping is the operator's responsibility). Once
+  setup is complete, the wizard must not be reachable.
+- **Do not log secrets.** `API_KEY`, `BOT_TOKEN`, and any OAuth credentials must
+  never appear in logs or error output.
+
 ## Development Workflow
 
 1. **Plan** non-trivial changes first.

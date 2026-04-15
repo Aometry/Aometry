@@ -8,8 +8,13 @@ import path from 'path'
  * API Key Middleware
  */
 const authenticate = (client: BotClient) => (req: Request, res: Response, next: NextFunction) => {
-  const apiKey = req.headers['x-api-key']
-  if (!apiKey || apiKey !== client.config.API_KEY) {
+  const apiKey = req.header('X-API-KEY')
+  const expectedKey = (client.config.API_KEY || '').trim()
+  const providedKey = (apiKey || '').trim()
+
+  if (!providedKey || providedKey !== expectedKey) {
+    const maskedProvided = providedKey ? `${providedKey.slice(0, 4)}...${providedKey.slice(-4)}` : 'missing'
+    Logger.warning(`Failed API authentication from ${req.ip}. Key: ${maskedProvided}`, '🔐')
     return res.status(401).json({ message: 'Unauthorized: Invalid or missing API Key' })
   }
   next()
@@ -20,7 +25,7 @@ const authenticate = (client: BotClient) => (req: Request, res: Response, next: 
  */
 const cors = (client: BotClient) => (req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin as string
-  if (client.config.ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && client.config.ALLOWED_ORIGINS.some(o => o.trim() === origin.trim())) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')

@@ -13,6 +13,7 @@ services:
     ports:
       - "3001:3000"
     volumes:
+      - ./.env:/usr/src/app/.env
       - ./installed_modules:/usr/src/app/installed_modules
       - ./logs:/usr/src/app/logs
     networks:

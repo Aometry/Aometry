@@ -23,7 +23,24 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
       return res.status(400).json({ error: 'BOT_TOKEN and DEV_ID are required' })
     }
 
-    const API_KEY = crypto.randomBytes(32).toString('hex')
+    // Load existing config to preserve API_KEY and other values
+    const envPath = path.join(process.cwd(), '.env')
+    let existingApiKey = ''
+    let existingSystemLogs = ''
+    let existingLogs = ''
+
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8')
+      const apiKeyMatch = content.match(/^API_KEY=(.*)$/m)
+      const systemLogsMatch = content.match(/^SYSTEM_LOGS_CHANNEL=(.*)$/m)
+      const logsMatch = content.match(/^LOGS_CHANNEL=(.*)$/m)
+      
+      if (apiKeyMatch) existingApiKey = apiKeyMatch[1].trim()
+      if (systemLogsMatch) existingSystemLogs = systemLogsMatch[1].trim()
+      if (logsMatch) existingLogs = logsMatch[1].trim()
+    }
+
+    const API_KEY = existingApiKey || crypto.randomBytes(32).toString('hex')
     const ALLOWED_ORIGINS = 'https://aometry.finneh.xyz,http://localhost:4321'
 
     const envContent = [
@@ -38,12 +55,12 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
       'WEBUI_PORT=3000',
       '',
       '# Default Logging Channels (Configure via Dashboard later)',
-      'SYSTEM_LOGS_CHANNEL=',
-      'LOGS_CHANNEL='
+      `SYSTEM_LOGS_CHANNEL=${existingSystemLogs}`,
+      `LOGS_CHANNEL=${existingLogs}`
     ].join('\n')
 
     try {
-      fs.writeFileSync(path.join(process.cwd(), '.env'), envContent)
+      fs.writeFileSync(envPath, envContent)
       res.json({ success: true, apiKey: API_KEY })
 
       Logger.success('Configuration saved to .env!', '💾')

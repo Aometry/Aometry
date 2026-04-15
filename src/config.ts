@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 
 dotenv.config()
+console.log("[Config] API_KEY loaded:", process.env.API_KEY ? "yes" : "NO");
 
 const requiredConfigs = [
   'BOT_TOKEN',

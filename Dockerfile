@@ -4,6 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+RUN apk add --no-cache git
 RUN npm ci
 
 COPY tsconfig.json ./
@@ -21,6 +22,7 @@ WORKDIR /usr/src/app
 ENV NODE_ENV=production
 
 COPY package*.json ./
+RUN apk add --no-cache git
 RUN npm ci --omit=dev
 
 COPY --from=builder /usr/src/app/dist ./dist

@@ -4,6 +4,7 @@ import { createEvent } from '@/builders/EventBuilder'
 export default createEvent(Events.MessageDelete, {
   execute: async ({ args: [message], client }) => {
     if (!message.guild) return
+    console.log(message)
     // Add message delete logging logic here
   }
 })

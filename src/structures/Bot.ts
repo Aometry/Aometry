@@ -24,6 +24,7 @@ export default class Bot extends Client implements BotClient {
   public commands = new Collection<string, Command>()
   public subCommands = new Collection<string, SubCommand>()
   public events = new Collection<string, any>()
+  public componentHandlers = new Collection<string, (interaction: any, client: BotClient) => Promise<void>>()
   public repositoryManager: RepositoryManager
   public databaseManager: DatabaseManager
   public runtimeModuleManager: RuntimeModuleManager
@@ -56,6 +57,13 @@ export default class Bot extends Client implements BotClient {
     // Load Events
     Logger.loading('Loading event handlers...')
     await loadEvents(this)
+
+    Logger.line()
+
+    // Trigger Platform Initialization Lifecycle
+    Logger.loading('Initializing platform extensions...')
+    this.emit('AometryInit', this)
+    Logger.success('Platform initialization complete', '⚙️')
 
     Logger.line()
 

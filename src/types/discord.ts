@@ -22,6 +22,7 @@ export interface BotClient extends Client {
   commands: Collection<string, Command>;
   subCommands: Collection<string, SubCommand>;
   events: Collection<string, any>;
+  componentHandlers: Collection<string, (interaction: any, client: BotClient) => Promise<void>>;
   repositoryManager: RepositoryManager;
   databaseManager: DatabaseManager;
   runtimeModuleManager: RuntimeModuleManager;
@@ -52,11 +53,11 @@ export interface SubCommand {
   ) => Promise<any>;
 }
 
-export interface Event<K extends keyof ClientEvents> {
+export interface Event<K extends keyof ClientEvents | string> {
   name: K;
   once?: boolean;
   rest?: boolean;
-  execute: (...args: [...ClientEvents[K], BotClient]) => Promise<void> | void;
+  execute: (...args: any[]) => Promise<void> | void;
 }
 
 export interface CommandExecuteOptions {

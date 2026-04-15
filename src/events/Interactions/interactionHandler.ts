@@ -81,33 +81,28 @@ export default createEvent(Events.InteractionCreate, {
       return
     }
 
-    // 2. Handle Buttons & Modals (Components) for Governance
-    // We check for customIds starting with 'ncap_' or 'motion_' to dispatch to specific handlers
-    // For now, we'll try to load a handler dynamically or check a map if we were using a registry.
-    // Given the plan to have `src/modules/Core/governance/ncap/interaction.ts`, we can import that here or
-    // dispatch based on prefix.
-    // To keep it clean, let's implement a dynamic dispatcher or simple if-checks for now,
-    // as strict modularity might require a 'componentHandler' loader which we don't have yet.
-
-    // Quick dispatch for Governance module
+    // 2. Handle Buttons & Modals (Registry Dispatch)
     if (interaction.isButton() || interaction.isModalSubmit()) {
       const { customId } = interaction
 
       try {
-        if (customId.startsWith('ncap_')) {
-          // Dynamically import to avoid circular deps or rigid loading order
-          const handler = await import(
-            '@installed/governance/ncap/interaction'
-          )
-          if (handler && handler.default) {
-            await handler.default(interaction, client)
-          }
+        // Find a matching handler by prefix in the registry
+        const entry = client.componentHandlers.find((_, prefix) =>
+          customId.startsWith(prefix)
+        )
+
+        if (entry) {
+          await entry(interaction, client)
+          return
         }
       } catch (error: any) {
-        console.error(`Governance Interaction Error (${customId}):`, error)
+        console.error(
+          `[InteractionHandler] Error handling component (${customId}):`,
+          error
+        )
         if (interaction.isRepliable() && !interaction.replied) {
           await interaction.reply({
-            content: 'An error occurred handling this interaction.',
+            content: 'An error occurred while processing this interaction.',
             flags: 64
           })
         }

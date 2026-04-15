@@ -2,15 +2,11 @@ import { Events, ActivityType } from 'discord.js'
 import { createEvent } from '@/builders/EventBuilder'
 import { loadCommands } from '@/handler/commandHandler'
 import Logger from '@/utilities/Logger'
-import { startNcapTimerService } from '@installed/governance/ncap/timer'
-import { startMotionTimerService } from '@installed/governance/motions/timer'
 
 export default createEvent(Events.ClientReady, {
   once: true,
   execute: async ({ client }) => {
     await loadCommands(client)
-    startNcapTimerService(client)
-    startMotionTimerService(client)
 
     Logger.line()
     Logger.section('🎉 BOT READY')

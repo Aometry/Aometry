@@ -3,6 +3,7 @@ import { loadFiles } from '@/utilities/fileLoader'
 import Logger from '@/utilities/Logger'
 import jiti from 'jiti'
 import path from 'path'
+import fs from 'fs'
 
 const isTs = __filename.endsWith('.ts')
 const load = jiti(__filename, {
@@ -28,15 +29,46 @@ export async function loadEvents (client: BotClient) {
 
   // Load from both src/events and installed_modules
   const coreEvents = await loadFiles('src/events')
-  const moduleEvents = await loadFiles('installed_modules')
+  
+  // Load installed modules with metadata awareness
+  const moduleEvents: string[] = []
+  const installedModulesDir = path.join(process.cwd(), 'installed_modules')
 
-  // Filter module files to only include those in an "events" subdirectory
-  // and exclude non-event files if necessary
-  const filteredModuleEvents = moduleEvents.filter((file) =>
-    file.includes('/events/')
-  )
+  if (fs.existsSync(installedModulesDir)) {
+    const modules = fs.readdirSync(installedModulesDir, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name)
 
-  const files = [...coreEvents, ...filteredModuleEvents]
+    for (const mod of modules) {
+      const infoPath = path.join(installedModulesDir, mod, 'info.json')
+      if (fs.existsSync(infoPath)) {
+        try {
+          const info = JSON.parse(fs.readFileSync(infoPath, 'utf-8'))
+          if (Array.isArray(info.events)) {
+            for (const event of info.events) {
+              if (event.path) {
+                const fullPath = path.join(installedModulesDir, mod, event.path)
+                if (fs.existsSync(fullPath)) {
+                  moduleEvents.push(fullPath)
+                }
+              }
+            }
+          }
+        } catch (e) {
+          Logger.error(`Failed to parse info.json for events in module ${mod}`)
+        }
+      } else {
+        // Fallback: search in an events/ folder if it exists
+        const modEventsDir = path.join(installedModulesDir, mod, 'events')
+        if (fs.existsSync(modEventsDir)) {
+          const files = await loadFiles(`installed_modules/${mod}/events`)
+          moduleEvents.push(...files)
+        }
+      }
+    }
+  }
+
+  const files = [...coreEvents, ...moduleEvents]
   console.log('DEBUG: Loaded Event Files:', files)
 
   for (const file of files) {

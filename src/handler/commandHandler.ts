@@ -70,8 +70,48 @@ export async function loadCommands (client: BotClient) {
 
   // Load core modules from src/modules
   const coreFiles = await loadFiles('src/modules')
-  // Load installed modules from installed_modules
-  const installedFiles = await loadFiles('installed_modules')
+
+  // Load installed modules with metadata awareness
+  const installedFiles: string[] = []
+  const installedModulesDir = path.join(process.cwd(), 'installed_modules')
+
+  if (fs.existsSync(installedModulesDir)) {
+    const modules = fs.readdirSync(installedModulesDir, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name)
+
+    for (const mod of modules) {
+      const infoPath = path.join(installedModulesDir, mod, 'info.json')
+      if (fs.existsSync(infoPath)) {
+        try {
+          const info = JSON.parse(fs.readFileSync(infoPath, 'utf-8'))
+          if (Array.isArray(info.commands)) {
+            for (const cmd of info.commands) {
+              if (cmd.path) {
+                const fullPath = path.join(installedModulesDir, mod, cmd.path)
+                if (fs.existsSync(fullPath)) {
+                  installedFiles.push(fullPath)
+                }
+              }
+            }
+          }
+        } catch (e) {
+          Logger.error(`Failed to parse info.json for module ${mod}`)
+        }
+      } else {
+        // Fallback: search in a commands/ folder if it exists, otherwise scan module root
+        // If it's a "classic" directory structure without info.json
+        const modCommandsDir = path.join(installedModulesDir, mod, 'commands')
+        if (fs.existsSync(modCommandsDir)) {
+          const files = await loadFiles(`installed_modules/${mod}/commands`)
+          installedFiles.push(...files)
+        } else {
+          const files = await loadFiles(`installed_modules/${mod}`)
+          installedFiles.push(...files)
+        }
+      }
+    }
+  }
 
   const files = [...coreFiles, ...installedFiles]
   const processedFiles = new Set<string>()
@@ -79,12 +119,18 @@ export async function loadCommands (client: BotClient) {
   for (const file of files) {
     // SKIP non-command files
     const fileName = file.split('/').pop() || ''
+    const isModule = file.includes('installed_modules')
+
     if (
       fileName.includes('Utils') ||
       fileName.includes('timer') ||
       fileName.includes('interaction') ||
       fileName.includes('Handler') ||
-      fileName.startsWith('_') // Convention for internal files
+      fileName.includes('database') ||
+      fileName.includes('types') ||
+      fileName.includes('calculator') ||
+      fileName.startsWith('_') || // Convention for internal files
+      fileName.endsWith('.d.ts') // Types
     ) {
       continue
     }
@@ -147,7 +193,13 @@ export async function loadCommands (client: BotClient) {
       }
 
       if (!command.data) {
-        table.addRow(file.split('/').pop(), '❌ MISSING DATA')
+        // If it was explicitly requested in info.json, it's an error. 
+        // If it was picked up by glob, it's just a support file we should skip silent.
+        // We check if the path is in a 'commands' directory or listed in an info.json.
+        // For now, if it's missing data, we only show it as an error if it's not a known ignored type.
+        if (file.toLowerCase().includes('command')) {
+          table.addRow(file.split('/').pop(), '❌ MISSING DATA')
+        }
         continue
       }
 

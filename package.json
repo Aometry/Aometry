@@ -1,6 +1,6 @@
 {
   "name": "aometry",
-  "version": "1000.2.0",
+  "version": "1000.2.1",
   "description": "Modular discord bot platform built with discord.js",
   "main": "index.js",
   "scripts": {

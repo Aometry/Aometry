@@ -14,6 +14,7 @@ import {
 import { Config } from './index'
 import RepositoryManager from '@/utilities/RepositoryManager'
 import DatabaseManager from '@/utilities/DatabaseManager'
+import RuntimeModuleManager from '@/utilities/RuntimeModuleManager'
 
 export interface BotClient extends Client {
   config: Config;
@@ -23,6 +24,7 @@ export interface BotClient extends Client {
   events: Collection<string, any>;
   repositoryManager: RepositoryManager;
   databaseManager: DatabaseManager;
+  runtimeModuleManager: RuntimeModuleManager;
 }
 
 export interface Command {

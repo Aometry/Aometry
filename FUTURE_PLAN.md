@@ -1,0 +1,5 @@
+- [ ] Fix Typescript errors
+- [ ] Ensure /installed_modules/governance points to Fusion Party repo (https://github.com/Fusion-Party-Aus/aometry-repo)
+- [ ] Ensure CLAUDE.md file exists based on existing finnehxyz (https://github.com/finneh4249/finnehxyz/blob/main/CLAUDE.md)
+- [ ] Create a WebUI for managing the bot including installing modules from a repo
+- [ ] Dockerise the entire application

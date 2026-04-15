@@ -4,6 +4,9 @@ export interface Config {
   SYSTEM_LOGS_CHANNEL: string;
   LOGS_CHANNEL: string;
   DEV_ID: string;
+  WEBUI_PORT: number;
+  API_KEY: string;
+  ALLOWED_ORIGINS: string[];
   installedRepositories: RepositoryInfo[];
   installedModules: ModuleInfo[];
 }
@@ -14,6 +17,12 @@ export interface ModuleInfo {
   path: string;
   version: string;
   description: string;
+  repositoryUrl?: string;
+  syncRemoteUrl?: string;
+  syncBranch?: string;
+  syncTokenEnvVar?: string;
+  syncStatus?: 'manual' | 'synced';
+  lastSyncedAt?: string;
 }
 
 export interface RepositoryInfo {

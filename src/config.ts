@@ -8,20 +8,15 @@ dotenv.config()
 const requiredConfigs = [
   'BOT_TOKEN',
   'LOGS_CHANNEL',
-  'DEV_ID'
+  'DEV_ID',
+  'API_KEY'
 ] as const
 
-for (const config of requiredConfigs) {
-  if (!process.env[config]) {
-    throw new Error(`Missing ${config} in .env`)
+for (const key of requiredConfigs) {
+  if (!process.env[key]) {
+    // We don't throw during setup phase, but we should log it
+    console.warn(`[Config] Missing ${key} in .env`)
   }
-}
-
-const requiredEnv = ['BOT_TOKEN', 'SYSTEM_LOGS_CHANNEL', 'LOGS_CHANNEL', 'DEV_ID']
-const missingEnv = requiredEnv.filter(env => !process.env[env])
-
-if (missingEnv.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingEnv.join(', ')}`)
 }
 
 // Dynamic loading of installed modules/repos
@@ -48,6 +43,9 @@ const config: Config = {
   SYSTEM_LOGS_CHANNEL: process.env.SYSTEM_LOGS_CHANNEL!,
   LOGS_CHANNEL: process.env.LOGS_CHANNEL!,
   DEV_ID: process.env.DEV_ID!,
+  WEBUI_PORT: Number(process.env.WEBUI_PORT || 3000),
+  API_KEY: process.env.API_KEY || 'generate-a-secure-key-now',
+  ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean),
   installedRepositories,
   installedModules
 }

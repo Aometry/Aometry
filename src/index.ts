@@ -3,7 +3,7 @@ import RepositoryManager from './utilities/RepositoryManager'
 import Logger from './utilities/Logger'
 import fs from 'fs'
 import path from 'path'
-import setup from './utilities/Setup'
+import { startAdminWebServer } from './web/server'
 
 const args = process.argv.slice(2)
 
@@ -42,15 +42,23 @@ async function main () {
   }
 
   if (args.length === 0 || !['install', 'uninstall', 'list'].includes(args[0])) {
-    if (!fs.existsSync(path.join(process.cwd(), '.env'))) {
-      await setup().then(() => {
-        const bot = new Bot()
-        bot.start()
-      })
-    } else {
-      const bot = new Bot()
-      bot.start()
+    const envPath = path.join(process.cwd(), '.env')
+    const hasEnvFile = fs.existsSync(envPath)
+    const hasRequiredEnv = Boolean(
+      process.env.BOT_TOKEN &&
+      process.env.DEV_ID &&
+      process.env.API_KEY
+    )
+
+    if (!hasEnvFile || !hasRequiredEnv) {
+      const { launchSetupServer } = require('./web/setupServer')
+      launchSetupServer(Number(process.env.SETUP_PORT || 3000))
+      return
     }
+
+    const bot = new Bot()
+    await bot.start()
+    startAdminWebServer(bot)
   }
 }
 

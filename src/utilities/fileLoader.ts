@@ -11,8 +11,17 @@ export async function loadFiles (dirName: string): Promise<string[]> {
   // whether we are loading .ts source files or .js compiled files.
   // During dev (ts-node), we load .ts. During prod, we load .js.
 
-  const extension = __filename.endsWith('.ts') ? 'ts' : 'js'
-  const pattern = `${process.cwd().replace(/\\/g, '/')}/${dirName}/**/*.${extension}`
+  const isTs = __filename.endsWith('.ts')
+  const extension = isTs ? 'ts' : 'js'
+
+  // If we are in production (.js), we should look in the dist folder for core files
+  // assuming dirName starts with 'src' or 'installed_modules'.
+  let baseDir = dirName
+  if (!isTs && (dirName.startsWith('src') || dirName.startsWith('installed_modules'))) {
+    baseDir = `dist/${dirName}`
+  }
+
+  const pattern = `${process.cwd().replace(/\\/g, '/')}/${baseDir}/**/*.${extension}`
 
   const files = await glob(pattern)
   return files

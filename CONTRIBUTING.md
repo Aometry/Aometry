@@ -70,9 +70,10 @@ npm start
 
 ## Code Style
 
--   **No Semicolons**: We use `standard` style.
--   **TypeScript**: Use proper types whenever possible. Avoid `any`.
--   **Builders**: Use `CommandBuilder` and `EventBuilder` for creating commands and events.
+- **Standard JS Style**: We use the [Standard](https://standardjs.com/) style (no semicolons, 2-space indentation).
+- **Linting**: Ensure `npm run lint` passes before submitting.
+- **TypeScript**: Maintain strict typing. Use `@/` aliases for imports.
+- **Builders**: Use `createCommand` and `createEvent` builders for all extensions.
 
 ## Issue Reporting
 

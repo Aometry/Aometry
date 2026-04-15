@@ -2,21 +2,17 @@ import {
   Client,
   Collection,
   GatewayIntentBits,
-  Partials,
-  TextChannel,
-  EmbedBuilder,
-  Events
+  Partials
 } from 'discord.js'
-import { Collection as DiscordCollection } from 'discord.js'
 import { loadEvents } from '@/handler/eventHandler'
 import Logger from '@/utilities/Logger'
 import config from '@/config'
 import { BotClient, Command, SubCommand } from '@/types/discord'
 import RepositoryManager from '@/utilities/RepositoryManager'
 import DatabaseManager from '@/utilities/DatabaseManager'
+import RuntimeModuleManager from '@/utilities/RuntimeModuleManager'
 import { version } from '../../package.json'
 import { ErrorHandler } from '@/handler/errorHandler'
-import { NcapDatabaseManager } from '@installed/governance/ncap/database'
 
 const { Guilds, GuildMembers, GuildMessages, MessageContent } =
   GatewayIntentBits
@@ -30,9 +26,8 @@ export default class Bot extends Client implements BotClient {
   public events = new Collection<string, any>()
   public repositoryManager: RepositoryManager
   public databaseManager: DatabaseManager
+  public runtimeModuleManager: RuntimeModuleManager
   public errorHandler: ErrorHandler
-    public ncapSubmissions: DiscordCollection<string, any> // NCAP submissions cache
-    public ncapDatabaseManager: NcapDatabaseManager
 
   constructor () {
     super({
@@ -42,9 +37,9 @@ export default class Bot extends Client implements BotClient {
 
     this.repositoryManager = new RepositoryManager(this)
     this.databaseManager = new DatabaseManager(this.config)
+    this.runtimeModuleManager = new RuntimeModuleManager(this)
+    this.repositoryManager.setRuntimeManager(this.runtimeModuleManager)
     this.errorHandler = new ErrorHandler(this)
-      this.ncapSubmissions = new DiscordCollection()
-      this.ncapDatabaseManager = new NcapDatabaseManager()
   }
 
   async start () {

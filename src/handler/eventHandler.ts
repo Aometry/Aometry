@@ -14,6 +14,7 @@ export async function loadEvents (client: BotClient) {
   )
 
   await client.events.clear()
+  client.removeAllListeners()
 
   // Load from both src/events and installed_modules
   const coreEvents = await loadFiles('src/events')

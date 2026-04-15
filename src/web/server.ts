@@ -20,7 +20,7 @@ const authenticate = (client: BotClient) => (req: Request, res: Response, next: 
  */
 const cors = (client: BotClient) => (req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin as string
-  if (client.config.ALLOWED_ORIGINS.includes(origin) || client.config.ALLOWED_ORIGINS.includes('*')) {
+  if (client.config.ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')

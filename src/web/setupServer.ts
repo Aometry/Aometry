@@ -24,7 +24,7 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
     }
 
     const API_KEY = crypto.randomBytes(32).toString('hex')
-    const ALLOWED_ORIGINS = 'https://aometry.finneh.xyz'
+    const ALLOWED_ORIGINS = 'https://aometry.finneh.xyz,http://localhost:4321'
 
     const envContent = [
       '# Bot Configuration',

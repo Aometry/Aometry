@@ -4,7 +4,6 @@ import { loadCommands } from '@/handler/commandHandler'
 import Logger from '@/utilities/Logger'
 import { startNcapTimerService } from '@installed/governance/ncap/timer'
 import { startMotionTimerService } from '@installed/governance/motions/timer'
-import gradient from 'gradient-string'
 
 export default createEvent(Events.ClientReady, {
   once: true,
@@ -20,12 +19,12 @@ export default createEvent(Events.ClientReady, {
     if (!client.user) return
 
     const botInfo = [
-      `${gradient.pastel('Bot Username:')} ${client.user.username}`,
-      `${gradient.pastel('Bot Version:')} v${client.botVersion}`,
-      `${gradient.pastel('Bot Tag:')} ${client.user.tag}`,
-      `${gradient.pastel('Bot ID:')} ${client.user.id}`,
+      `${Logger.pastel('Bot Username:')} ${client.user.username}`,
+      `${Logger.pastel('Bot Version:')} v${client.botVersion}`,
+      `${Logger.pastel('Bot Tag:')} ${client.user.tag}`,
+      `${Logger.pastel('Bot ID:')} ${client.user.id}`,
       '',
-      `${gradient.rainbow('🎧 Now listening to /help')}`
+      `${Logger.rainbow('🎧 Now listening to /help')}`
     ].join('\n')
 
     Logger.box(botInfo, {
@@ -40,7 +39,7 @@ export default createEvent(Events.ClientReady, {
 
     const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`
 
-    Logger.box(`🔗 ${gradient.cristal('INVITE LINK')}\n\n${inviteUrl}`, {
+    Logger.box(`🔗 ${Logger.crystal('INVITE LINK')}\n\n${inviteUrl}`, {
       padding: 1,
       margin: 1,
       borderStyle: 'round',

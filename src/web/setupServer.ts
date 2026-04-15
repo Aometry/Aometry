@@ -4,6 +4,9 @@ import path from 'path'
 import crypto from 'crypto'
 import Logger from '@/utilities/Logger'
 
+// Reference for GC prevention
+let activeServer: any = null
+
 export async function launchSetupServer (port: number = 3000) {
   const app = express()
   app.use(express.json())
@@ -50,7 +53,7 @@ export async function launchSetupServer (port: number = 3000) {
     }
   })
 
-  app.listen(port, '127.0.0.1', () => {
+  activeServer = app.listen(port, '127.0.0.1', () => {
     Logger.line()
     Logger.gradient('🚀 AOMETRY SETUP MODE', ['cyan', 'magenta'])
     Logger.info(`Setup Wizard is ready at http://localhost:${port}`)

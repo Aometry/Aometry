@@ -8,6 +8,7 @@ import { startAdminWebServer } from './web/server'
 const args = process.argv.slice(2)
 
 async function main () {
+  await Logger.init()
   if (args.length > 0) {
     const command = args[0]
     // For CLI tools we might not need a full client, but RepositoryManager expects one.
@@ -52,7 +53,9 @@ async function main () {
 
     if (!hasEnvFile || !hasRequiredEnv) {
       const { launchSetupServer } = require('./web/setupServer')
-      launchSetupServer(Number(process.env.SETUP_PORT || 3000))
+      await launchSetupServer(Number(process.env.SETUP_PORT || 3000))
+      // Keep process alive while setup is active
+      setInterval(() => {}, 1000 * 60 * 60)
       return
     }
 

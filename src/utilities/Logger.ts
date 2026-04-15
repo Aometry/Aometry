@@ -1,9 +1,31 @@
 import chalk from 'chalk'
-import gradient from 'gradient-string'
 import boxen, { Options as BoxenOptions } from 'boxen'
 import { LoggerOptions } from '@/types/index'
 
 class Logger {
+  private static gradientString: any = null
+
+  /**
+   * Initialize ESM modules dynamically
+   */
+  static async init () {
+    if (!this.gradientString) {
+      try {
+        this.gradientString = (await import('gradient-string')).default
+      } catch (err) {
+        // Fallback if import fails
+        this.gradientString = null
+      }
+    }
+  }
+
+  /**
+   * Get the gradient instance, ensuring it's loaded
+   */
+  private static get g () {
+    return this.gradientString
+  }
+
   static success (message: string, emoji: string = '✅') {
     console.log(`${emoji} ${chalk.green(message)}`)
   }
@@ -52,15 +74,36 @@ class Logger {
   }
 
   static gradient (message: string, colors: string[] = ['cyan', 'blue']) {
-    console.log(gradient(colors)(message))
+    if (this.g) {
+      console.log(this.g(colors)(message))
+    } else {
+      console.log(chalk.cyan(message))
+    }
   }
 
   static rainbow (message: string) {
-    console.log(gradient.rainbow(message))
+    if (this.g) {
+      console.log(this.g.rainbow(message))
+    } else {
+      console.log(chalk.magenta(message))
+    }
+  }
+
+  /**
+   * Exposed pastel for inline usage if needed (fallback handled)
+   */
+  static pastel (message: string) {
+    return this.g ? this.g.pastel(message) : chalk.cyan(message)
+  }
+
+  static crystal (message: string) {
+    return this.g ? this.g.cristal(message) : chalk.blue(message)
   }
 
   static async showBanner (version: string) {
     const figlet = require('figlet')
+    await this.init()
+
     const banner = await new Promise<string>((resolve, reject) => {
       figlet('Aometry', (err: any, data: string) => {
         if (err) reject(err)
@@ -69,7 +112,12 @@ class Logger {
     })
 
     console.clear()
-    console.log(gradient.pastel.multiline(banner))
+    if (this.g) {
+      console.log(this.g.pastel.multiline(banner))
+    } else {
+      console.log(chalk.cyan(banner))
+    }
+
     this.box(`v${version} • By Finneh`, {
       padding: 0,
       margin: 0,

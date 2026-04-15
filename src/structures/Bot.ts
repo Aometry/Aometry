@@ -24,7 +24,8 @@ export default class Bot extends Client implements BotClient {
   public commands = new Collection<string, Command>()
   public subCommands = new Collection<string, SubCommand>()
   public events = new Collection<string, any>()
-  public componentHandlers = new Collection<string, (interaction: any, client: BotClient) => Promise<void>>()
+  // eslint-disable-next-line comma-spacing
+  public componentHandlers = new Collection<string,(interaction: any, client: BotClient) => Promise<void>>()
   public repositoryManager: RepositoryManager
   public databaseManager: DatabaseManager
   public runtimeModuleManager: RuntimeModuleManager

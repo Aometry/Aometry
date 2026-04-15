@@ -52,8 +52,11 @@ async function main () {
     )
 
     if (!hasEnvFile || !hasRequiredEnv) {
+      const isDocker = fs.existsSync('/.dockerenv')
+      const host = isDocker ? '0.0.0.0' : '127.0.0.1'
+
       const { launchSetupServer } = require('./web/setupServer')
-      await launchSetupServer(Number(process.env.SETUP_PORT || 3000))
+      await launchSetupServer(Number(process.env.SETUP_PORT || 3000), host)
       // Keep process alive while setup is active
       setInterval(() => {}, 1000 * 60 * 60)
       return

@@ -160,6 +160,18 @@ export default class DatabaseManager {
         created_at DATETIME
       );
     `)
+
+    // Role Sets Tables
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS role_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT,
+        name TEXT,
+        roles TEXT,
+        type TEXT,
+        UNIQUE(guild_id, name)
+      );
+    `)
   }
 
   /**

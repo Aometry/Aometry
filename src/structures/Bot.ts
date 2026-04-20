@@ -2,7 +2,8 @@ import {
   Client,
   Collection,
   GatewayIntentBits,
-  Partials
+  Partials,
+  Options
 } from 'discord.js'
 import { loadEvents } from '@/handler/eventHandler'
 import Logger from '@/utilities/Logger'
@@ -34,7 +35,18 @@ export default class Bot extends Client implements BotClient {
   constructor () {
     super({
       intents: [Guilds, GuildMembers, GuildMessages, MessageContent],
-      partials: [User, Message, GuildMember, ThreadMember]
+      partials: [User, Message, GuildMember, ThreadMember],
+      makeCache: Options.cacheWithLimits({
+        ...Options.DefaultMakeCacheSettings,
+        MessageManager: 100, // Limit message cache strictly to 100 per channel
+      }),
+      sweepers: {
+        ...Options.DefaultSweeperSettings,
+        messages: {
+          interval: 3600, // Sweep messages every hour
+          lifetime: 10800, // Remove messages older than 3 hours
+        },
+      },
     })
 
     this.repositoryManager = new RepositoryManager(this)

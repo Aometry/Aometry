@@ -47,7 +47,7 @@ installed modules. Treat it accordingly.
    - `npx tsc --noEmit` (fast type check)
    - `npm run lint` (eslint fix)
 3. **Module Testing:** Verify `/repo` commands and WebUI endpoints if loader logic changes.
-
+4. **Verify Build:** Always run `npm run build` to ensure no lint or type errors exist before completing a task.
 ## Engineering Conventions
 
 ### Code Style (Standard)
@@ -63,6 +63,9 @@ installed modules. Treat it accordingly.
 Always use the provided builders for commands and events to ensure type safety:
 - **Commands:** `createCommand('name', 'desc', (builder) => { ... })` from `@/builders/CommandBuilder`.
 - **Events:** `createEvent(Events.Name, { execute: ({ client, args }) => { ... } })` from `@/builders/EventBuilder`.
+
+### Event Handling & Logging
+- **Do not log raw Discord entities** (Messages, Members, Guilds) in high frequency events. Their circular serialized nature causes profound performance degradation and massive log files. Use `.id` or specific attributes like `.content` instead.
 
 ### Persistence & Database
 - Use `DatabaseManager.getSqlite()` for persistent state.

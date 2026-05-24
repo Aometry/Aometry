@@ -88,12 +88,12 @@ For the dashboard to communicate with your bot, the bot's API must be publicly r
 
 On first run (when no `.env` file exists), Aometry automatically launches a browser-based setup wizard instead of the bot itself. The wizard collects the minimum required configuration:
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `BOT_TOKEN` | Yes | Your Discord bot token |
-| `DEV_ID` | Yes | Your Discord user ID |
-| `DB_URL` | No | MongoDB connection string (defaults to SQLite) |
-| `API_KEY` | Auto | Generated automatically, displayed once |
+| Field       | Required | Description                                    |
+| ----------- | -------- | ---------------------------------------------- |
+| `BOT_TOKEN` | Yes      | Your Discord bot token                         |
+| `DEV_ID`    | Yes      | Your Discord user ID                           |
+| `DB_URL`    | No       | MongoDB connection string (defaults to SQLite) |
+| `API_KEY`   | Auto     | Generated automatically, displayed once        |
 
 The wizard writes the `.env` file and instructs you to restart. Channel configuration (system logs, general logs) is deferred to the dashboard — those values can't be known until the bot is actually running in a server.
 
@@ -128,6 +128,15 @@ Every repository must include an `info.json` at its root describing the availabl
 - `/repo list`: List installed modules.
 - `/repo configure-sync <name> [remote] [branch] [token-env]`: Configure per-module sync target.
 - `/repo sync-module <name>`: Sync a module to its configured remote.
+
+### Automatic Update Heartbeat
+
+Aometry runs an internal repository heartbeat every 6 hours after the bot is ready.
+
+- The heartbeat checks installed modules against their source repository `info.json` metadata.
+- If a newer version is detected, the module is automatically updated and runtime handlers are reloaded.
+- If local changes are detected in `installed_modules/<module>`, the update is skipped to avoid overwriting local edits.
+- Status is persisted per module and visible in `/repo list`.
 
 ### Repository Guide for Developers
 

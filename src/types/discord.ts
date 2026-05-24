@@ -9,12 +9,12 @@ import {
   UserContextMenuCommandInteraction,
   MessageContextMenuCommandInteraction,
   ClientEvents,
-  Message
-} from 'discord.js'
-import { Config } from './index'
-import RepositoryManager from '@/utilities/RepositoryManager'
-import DatabaseManager from '@/utilities/DatabaseManager'
-import RuntimeModuleManager from '@/utilities/RuntimeModuleManager'
+  Message,
+} from "discord.js";
+import { Config } from "./index";
+import RepositoryManager from "@/utilities/RepositoryManager";
+import DatabaseManager from "@/utilities/DatabaseManager";
+import RuntimeModuleManager from "@/utilities/RuntimeModuleManager";
 
 export interface BotClient extends Client {
   config: Config;
@@ -22,10 +22,15 @@ export interface BotClient extends Client {
   commands: Collection<string, Command>;
   subCommands: Collection<string, SubCommand>;
   events: Collection<string, any>;
-  componentHandlers: Collection<string, (interaction: any, client: BotClient) => Promise<void>>;
+  componentHandlers: Collection<
+    string,
+    (interaction: any, client: BotClient) => Promise<void>
+  >;
   repositoryManager: RepositoryManager;
   databaseManager: DatabaseManager;
   runtimeModuleManager: RuntimeModuleManager;
+  startRepositoryHeartbeat: () => void;
+  stopRepositoryHeartbeat: () => void;
 }
 
 export interface Command {
@@ -49,7 +54,7 @@ export interface SubCommand {
   subCommand: string;
   execute: (
     interaction: ChatInputCommandInteraction,
-    client: BotClient
+    client: BotClient,
   ) => Promise<any>;
 }
 

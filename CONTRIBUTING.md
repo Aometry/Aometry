@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Aometry! This guide will help you
 
 ## Prerequisites
 
-- **Node.js**: v16.9.0 or higher
+- **Node.js**: v18.0.0 or higher
 - **npm**: v7.0.0 or higher
 - **Git**
 

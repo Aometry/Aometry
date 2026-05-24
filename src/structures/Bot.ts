@@ -18,7 +18,7 @@ import { ErrorHandler } from '@/handler/errorHandler'
 const { Guilds, GuildMembers, GuildMessages, MessageContent } =
   GatewayIntentBits
 const { User, Message, GuildMember, ThreadMember } = Partials
-type ComponentHandler = (interaction: any, client: BotClient) => Promise<void>;
+type ComponentHandler = (interaction: any, client: BotClient) => Promise<void>
 
 export default class Bot extends Client implements BotClient {
   public config = config
@@ -59,6 +59,11 @@ export default class Bot extends Client implements BotClient {
   }
 
   async start () {
+    if (!this.config.API_KEY) {
+      Logger.error('Missing API_KEY. Run the setup wizard to generate one.', '🔐')
+      throw new Error('Missing API_KEY')
+    }
+
     // Show beautiful startup banner
     await Logger.showBanner(this.botVersion)
 

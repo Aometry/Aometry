@@ -7,6 +7,8 @@ import Logger from '@/utilities/Logger'
 // Reference for GC prevention
 let activeServer: any = null
 
+const sanitizeEnvValue = (value: string) => value.replace(/[\r\n]/g, '')
+
 export async function launchSetupServer (port: number = 3000, host: string = '127.0.0.1') {
   const app = express()
   app.use(express.json())
@@ -18,8 +20,11 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
 
   app.post('/setup', (req, res) => {
     const { BOT_TOKEN, DEV_ID, DB_URL } = req.body
+    const sanitizedToken = sanitizeEnvValue(String(BOT_TOKEN || ''))
+    const sanitizedDevId = sanitizeEnvValue(String(DEV_ID || ''))
+    const sanitizedDbUrl = sanitizeEnvValue(String(DB_URL || ''))
 
-    if (!BOT_TOKEN || !DEV_ID) {
+    if (!sanitizedToken || !sanitizedDevId) {
       return res.status(400).json({ error: 'BOT_TOKEN and DEV_ID are required' })
     }
 
@@ -40,14 +45,16 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
       if (logsMatch) existingLogs = logsMatch[1].trim()
     }
 
-    const API_KEY = existingApiKey || crypto.randomBytes(32).toString('hex')
+    const API_KEY = sanitizeEnvValue(
+      existingApiKey || crypto.randomBytes(32).toString('hex')
+    )
     const ALLOWED_ORIGINS = 'https://aometry.finneh.xyz,http://localhost:4321'
 
     const envContent = [
       '# Bot Configuration',
-      `BOT_TOKEN=${BOT_TOKEN}`,
-      `DEV_ID=${DEV_ID}`,
-      `DB_URL=${DB_URL || ''}`,
+      `BOT_TOKEN=${sanitizedToken}`,
+      `DEV_ID=${sanitizedDevId}`,
+      `DB_URL=${sanitizedDbUrl}`,
       '',
       '# API and Web Management',
       `API_KEY=${API_KEY}`,
@@ -55,8 +62,8 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
       'WEBUI_PORT=3000',
       '',
       '# Default Logging Channels (Configure via Dashboard later)',
-      `SYSTEM_LOGS_CHANNEL=${existingSystemLogs}`,
-      `LOGS_CHANNEL=${existingLogs}`
+      `SYSTEM_LOGS_CHANNEL=${sanitizeEnvValue(existingSystemLogs)}`,
+      `LOGS_CHANNEL=${sanitizeEnvValue(existingLogs)}`
     ].join('\n')
 
     try {

@@ -7,8 +7,6 @@ import { Command } from '@/types/discord'
 export default createEvent(Events.InteractionCreate, {
   execute: async ({ args: [interaction], client }): Promise<void> => {
     // 1. Handle Chat Input Commands && Context Menu Commands
-    // 1. Handle Chat Input Commands && Context Menu Commands
-    // 1. Handle Chat Input Commands && Context Menu Commands
     if (
       interaction.isChatInputCommand() ||
       interaction.isContextMenuCommand()
@@ -22,7 +20,7 @@ export default createEvent(Events.InteractionCreate, {
         if (interaction.isRepliable()) {
           await interaction.reply({
             embeds: [errorEmbed('Error', 'This command does not exist.')],
-            flags: 64
+            flags: MessageFlags.Ephemeral
           })
         }
         return
@@ -44,7 +42,7 @@ export default createEvent(Events.InteractionCreate, {
           embeds: [
             errorEmbed('Restricted', 'This command is for developers only.')
           ],
-          flags: 64
+          flags: MessageFlags.Ephemeral
         })
         return
       }
@@ -64,7 +62,7 @@ export default createEvent(Events.InteractionCreate, {
               'An error occurred while executing this command.'
             )
           ],
-          flags: 64
+          flags: MessageFlags.Ephemeral
         }
 
         // Catch "Already acknowledged" errors by checking state
@@ -102,7 +100,7 @@ export default createEvent(Events.InteractionCreate, {
         if (interaction.isRepliable() && !interaction.replied) {
           await interaction.reply({
             content: 'An error occurred while processing this interaction.',
-            flags: 64
+            flags: MessageFlags.Ephemeral
           })
         }
       }

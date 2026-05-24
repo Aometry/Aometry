@@ -57,6 +57,7 @@ export default class DatabaseManager {
       Logger.loading('Initializing SQLite database...')
       const dbPath = path.join(process.cwd(), 'database.sqlite')
       const sqlite = new Database(dbPath)
+      this._sqliteConnection = sqlite
 
       // If we are in fallback mode, this is THE connection.
       if (this.type === 'NONE' || this.type === 'SQLITE') {
@@ -67,7 +68,7 @@ export default class DatabaseManager {
       // Initialize Governance Tables
       this.initTables(sqlite)
 
-      Logger.success('SQLite database initialized', 'cj')
+      Logger.success('SQLite database initialized', '✅')
       return sqlite
     } catch (err: unknown) {
       const error = err as Error
@@ -114,16 +115,6 @@ export default class DatabaseManager {
         status TEXT,
         created_at DATETIME,
         FOREIGN KEY(post_id) REFERENCES ncap_posts(id)
-      );
-    `)
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS role_sets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        guild_id TEXT,
-        name TEXT,
-        type TEXT,
-        role_ids TEXT
       );
     `)
 
@@ -178,11 +169,25 @@ export default class DatabaseManager {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         guild_id TEXT,
         name TEXT,
-        roles TEXT,
         type TEXT,
+        role_ids TEXT,
         UNIQUE(guild_id, name)
       );
     `)
+
+    const roleSetColumns = db
+      .prepare("PRAGMA table_info('role_sets')")
+      .all() as { name: string }[]
+    const hasRoleIds = roleSetColumns.some((column) => column.name === 'role_ids')
+    const hasRoles = roleSetColumns.some((column) => column.name === 'roles')
+
+    if (!hasRoleIds) {
+      db.exec('ALTER TABLE role_sets ADD COLUMN role_ids TEXT')
+    }
+
+    if (hasRoles) {
+      db.exec('UPDATE role_sets SET role_ids = roles WHERE role_ids IS NULL')
+    }
   }
 
   /**

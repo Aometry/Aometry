@@ -69,7 +69,6 @@ export async function loadEvents (client: BotClient) {
   }
 
   const files = [...coreEvents, ...moduleEvents]
-  console.log('DEBUG: Loaded Event Files:', files)
 
   for (const file of files) {
     try {

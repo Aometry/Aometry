@@ -1,7 +1,7 @@
 import fs, { promises as fsp } from 'fs'
 import os from 'os'
 import path from 'path'
-import { execSync, spawn } from 'child_process'
+import { spawn, spawnSync } from 'child_process'
 import { createHash } from 'crypto'
 import { rimraf } from 'rimraf'
 import Logger from './Logger'
@@ -114,7 +114,8 @@ export default class RepositoryManager {
       if (fs.existsSync(this.tempDir)) {
         await rimraf(this.tempDir)
       }
-      execSync(`git clone ${repoUrl} ${this.tempDir}`, { stdio: 'ignore' })
+      this.validateRepoUrl(repoUrl)
+      await this.runGitCommand(['clone', repoUrl, this.tempDir])
 
       const infoPath = path.join(this.tempDir, 'info.json')
       if (!fs.existsSync(infoPath)) {
@@ -271,21 +272,23 @@ export default class RepositoryManager {
     }
 
     try {
-      execSync(`git -C "${modulePath}" remote set-url origin ${remoteUrl}`, {
-        stdio: 'ignore'
+      this.validateRepoUrl(remoteUrl)
+      this.runGitCommandSync(['-C', modulePath, 'remote', 'set-url', 'origin', remoteUrl])
+      this.runGitCommandSync(['-C', modulePath, 'add', '.'])
+      // Allow empty commits
+      this.runGitCommandSync(['-C', modulePath, 'commit', '-m', commitMessage], {
+        allowFailure: true
       })
-      const authUrl = remoteUrl.replace(
-        'https://',
-        `https://x-access-token:${token}@`
-      )
-      execSync(`git -C "${modulePath}" add .`, { stdio: 'ignore' })
-      execSync(
-        `git -C "${modulePath}" commit -m "${commitMessage.replace(/"/g, '\\"')}" || true`,
-        { stdio: 'ignore' }
-      )
-      execSync(`git -C "${modulePath}" push "${authUrl}" HEAD:${branch}`, {
-        stdio: 'ignore'
-      })
+      const authHeader = Buffer.from(`x-access-token:${token}`).toString('base64')
+      this.runGitCommandSync([
+        '-C',
+        modulePath,
+        '-c',
+        `http.extraheader=AUTHORIZATION: basic ${authHeader}`,
+        'push',
+        'origin',
+        `HEAD:${branch}`
+      ])
 
       const installedModules = this.getInstalledModules().map((m) =>
         m.name === moduleName
@@ -305,7 +308,7 @@ export default class RepositoryManager {
     } catch (error: any) {
       return {
         success: false,
-        message: `Failed to sync ${moduleName}: ${error.message}`
+        message: `Failed to sync ${moduleName}. Please check server logs.`
       }
     }
   }
@@ -548,6 +551,31 @@ export default class RepositoryManager {
     }
   }
 
+  private validateRepoUrl (repoUrl: string) {
+    if (!repoUrl || /[\s\r\n]/.test(repoUrl)) {
+      throw new Error('Invalid repository URL')
+    }
+
+    if (repoUrl.startsWith('git@')) {
+      const gitSshPattern = /^git@[\w.-]+:[\w./-]+$/
+      if (!gitSshPattern.test(repoUrl)) {
+        throw new Error('Invalid repository URL')
+      }
+      return
+    }
+
+    let parsed: URL
+    try {
+      parsed = new URL(repoUrl)
+    } catch {
+      throw new Error('Invalid repository URL')
+    }
+
+    if (!['https:', 'ssh:'].includes(parsed.protocol)) {
+      throw new Error('Invalid repository URL')
+    }
+  }
+
   private async runGitCommand (args: string[]): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const child = spawn('git', args, {
@@ -561,9 +589,25 @@ export default class RepositoryManager {
           return
         }
 
-        reject(new Error(`git ${args.join(' ')} failed with code ${code}`))
+        reject(new Error(`git command failed with code ${code}`))
       })
     })
+  }
+
+  private runGitCommandSync (
+    args: string[],
+    options: { allowFailure?: boolean } = {}
+  ) {
+    const result = spawnSync('git', args, { stdio: 'ignore' })
+    if (result.error) {
+      throw result.error
+    }
+
+    if (result.status === 0 || options.allowFailure) {
+      return
+    }
+
+    throw new Error('git command failed')
   }
 
   private async computeDirectoryHash (directoryPath: string): Promise<string> {

@@ -20,6 +20,7 @@ for (const key of requiredConfigs) {
   }
 }
 
+
 // Dynamic loading of installed modules/repos
 const installedModulesPath = path.join(process.cwd(), 'installed_modules', 'installedModules.json')
 const installedRepositoriesPath = path.join(process.cwd(), 'installed_modules', 'installedRepositories.json')
@@ -45,7 +46,7 @@ const config: Config = {
   LOGS_CHANNEL: process.env.LOGS_CHANNEL!,
   DEV_ID: process.env.DEV_ID!,
   WEBUI_PORT: Number(process.env.WEBUI_PORT || 3000),
-  API_KEY: process.env.API_KEY || 'generate-a-secure-key-now',
+  API_KEY: process.env.API_KEY || '',
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean),
   installedRepositories,
   installedModules

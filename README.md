@@ -152,7 +152,7 @@ Contributions are welcome! Feel free to open issues, submit pull requests, or jo
 
 ## License
 
-ISC License
+MIT License
 
 ## Links
 

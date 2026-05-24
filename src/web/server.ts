@@ -14,11 +14,8 @@ const authenticate =
     const providedKey = (apiKey || '').trim()
 
     if (!providedKey || providedKey !== expectedKey) {
-      const maskedProvided = providedKey
-        ? `${providedKey.slice(0, 4)}...${providedKey.slice(-4)}`
-        : 'missing'
       Logger.warning(
-        `Failed API authentication from ${req.ip}. Key: ${maskedProvided}`,
+        `Failed API authentication from ${req.ip}.`,
         '🔐'
       )
       return res
@@ -27,6 +24,35 @@ const authenticate =
     }
     next()
   }
+
+const createRateLimiter = ({
+  windowMs,
+  maxRequests
+}: {
+  windowMs: number
+  maxRequests: number
+}) => {
+  const hits = new Map<string, { count: number; windowStart: number }>()
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = req.ip || 'unknown'
+    const now = Date.now()
+    const entry = hits.get(key)
+
+    if (!entry || now - entry.windowStart > windowMs) {
+      hits.set(key, { count: 1, windowStart: now })
+      return next()
+    }
+
+    if (entry.count >= maxRequests) {
+      return res.status(429).json({
+        message: 'Too many requests. Please try again later.'
+      })
+    }
+
+    entry.count += 1
+    next()
+  }
+}
 
 /**
  * CORS Middleware
@@ -75,6 +101,7 @@ export function startAdminWebServer (client: BotClient) {
   // Authenticated Endpoints
   const api = express.Router()
   api.use(authenticate(client))
+  const settingsRateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 30 })
 
   // Modules List
   api.get('/modules', (_req, res) => {
@@ -153,7 +180,7 @@ export function startAdminWebServer (client: BotClient) {
   /**
    * Settings API
    */
-  api.get('/settings', (req, res) => {
+  api.get('/settings', settingsRateLimit, (req, res) => {
     const settingsPath = path.join(process.cwd(), 'settings.json')
     let settings = {}
     if (fs.existsSync(settingsPath)) {
@@ -162,7 +189,7 @@ export function startAdminWebServer (client: BotClient) {
     res.json(settings)
   })
 
-  api.post('/settings', (req, res) => {
+  api.post('/settings', settingsRateLimit, (req, res) => {
     const settingsPath = path.join(process.cwd(), 'settings.json')
     const newSettings = req.body
     fs.writeFileSync(settingsPath, JSON.stringify(newSettings, null, 2))

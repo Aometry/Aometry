@@ -93,7 +93,6 @@ export default createEvent(Events.InteractionCreate, {
 
         if (entry) {
           await entry(interaction, client)
-          return
         }
       } catch (error: any) {
         console.error(

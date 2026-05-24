@@ -34,7 +34,7 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
       const apiKeyMatch = content.match(/^API_KEY=(.*)$/m)
       const systemLogsMatch = content.match(/^SYSTEM_LOGS_CHANNEL=(.*)$/m)
       const logsMatch = content.match(/^LOGS_CHANNEL=(.*)$/m)
-      
+
       if (apiKeyMatch) existingApiKey = apiKeyMatch[1].trim()
       if (systemLogsMatch) existingSystemLogs = systemLogsMatch[1].trim()
       if (logsMatch) existingLogs = logsMatch[1].trim()

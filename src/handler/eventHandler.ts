@@ -4,6 +4,10 @@ import Logger from '@/utilities/Logger'
 import jiti from 'jiti'
 import path from 'path'
 import fs from 'fs'
+// @ts-ignore
+import Ascii from 'ascii-table'
+/// <reference path="@/types/declarations.d.ts" />
+import chalk from 'chalk'
 
 const isTs = __filename.endsWith('.ts')
 const load = jiti(__filename, {
@@ -12,10 +16,6 @@ const load = jiti(__filename, {
     '@installed': path.join(process.cwd(), 'installed_modules')
   }
 })
-// @ts-ignore
-import Ascii from 'ascii-table'
-/// <reference path="@/types/declarations.d.ts" />
-import chalk from 'chalk'
 
 export async function loadEvents (client: BotClient) {
   const table = new Ascii('Events').setHeading(
@@ -29,7 +29,7 @@ export async function loadEvents (client: BotClient) {
 
   // Load from both src/events and installed_modules
   const coreEvents = await loadFiles('src/events')
-  
+
   // Load installed modules with metadata awareness
   const moduleEvents: string[] = []
   const installedModulesDir = path.join(process.cwd(), 'installed_modules')

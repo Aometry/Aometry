@@ -6,7 +6,7 @@ interface RoleSet {
   role_ids: string;
 }
 
-function processRoles(
+function processRoles (
   triggerRoles: Collection<string, Role>,
   isAdded: boolean,
   roleSets: RoleSet[],
@@ -78,11 +78,10 @@ const event: Event<Events.GuildMemberUpdate> = {
         await updatedMember.roles.add(Array.from(rolesToAdd), 'Role Set constraints')
       }
     } catch (err: unknown) {
-      const error = err as Error;
+      const error = err as Error
       console.error(`Error applying Role Sets for user ${newMember.id}:`, error.message)
     }
   }
 }
 
 export default event
-

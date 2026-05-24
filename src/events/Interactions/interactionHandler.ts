@@ -1,4 +1,9 @@
-import { Events, ChatInputCommandInteraction, MessageFlags } from 'discord.js'
+import {
+  Events,
+  ChatInputCommandInteraction,
+  MessageFlags,
+  type InteractionReplyOptions
+} from 'discord.js'
 import { createEvent } from '@/builders/EventBuilder'
 import { errorEmbed } from '@/utils/responses'
 import { isDeveloper } from '@/utils/validators'
@@ -55,7 +60,7 @@ export default createEvent(Events.InteractionCreate, {
           error
         )
 
-        const errorMessage = {
+        const errorMessage: InteractionReplyOptions = {
           embeds: [
             errorEmbed(
               'Error',

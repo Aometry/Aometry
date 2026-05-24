@@ -20,7 +20,6 @@ for (const key of requiredConfigs) {
   }
 }
 
-
 // Dynamic loading of installed modules/repos
 const installedModulesPath = path.join(process.cwd(), 'installed_modules', 'installedModules.json')
 const installedRepositoriesPath = path.join(process.cwd(), 'installed_modules', 'installedRepositories.json')

@@ -2,8 +2,23 @@ import { Events, ActivityType } from 'discord.js'
 import { createEvent } from '@/builders/EventBuilder'
 import { loadCommands } from '@/handler/commandHandler'
 import Logger from '@/utilities/Logger'
-import handleNcapInteraction from '@installed/governance/ncap/interaction_backup'
-import { startNcapTimerService } from '@installed/governance/ncap/timer_backup'
+
+const ncapInteractionPath: string = '@installed/governance/ncap/interaction_backup'
+const ncapTimerPath: string = '@installed/governance/ncap/timer_backup'
+
+const loadOptionalModule = async (modulePath: string) => {
+  try {
+    return await import(modulePath)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Cannot find module')) {
+      Logger.warning(`Optional module not installed: ${modulePath}`)
+      return null
+    }
+    Logger.warning(`Failed to load optional module: ${modulePath}`)
+    Logger.warning(error instanceof Error ? error.message : String(error))
+    return null
+  }
+}
 
 export default createEvent(Events.ClientReady, {
   once: true,
@@ -35,8 +50,19 @@ export default createEvent(Events.ClientReady, {
 
     client.user.setActivity('to /help', { type: ActivityType.Listening })
 
-    client.componentHandlers.set('ncap_', handleNcapInteraction)
-    startNcapTimerService(client)
+    const [interactionModule, timerModule] = await Promise.all([
+      loadOptionalModule(ncapInteractionPath),
+      loadOptionalModule(ncapTimerPath)
+    ])
+    const handleNcapInteraction = interactionModule?.default
+    const startNcapTimerService = timerModule?.startNcapTimerService
+
+    if (handleNcapInteraction) {
+      client.componentHandlers.set('ncap_', handleNcapInteraction)
+    }
+    if (startNcapTimerService) {
+      startNcapTimerService(client)
+    }
 
     const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`
 

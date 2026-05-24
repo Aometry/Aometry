@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express'
+import express from 'express'
+import rateLimit from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
@@ -8,34 +9,12 @@ import Logger from '@/utilities/Logger'
 let activeServer: any = null
 
 const sanitizeEnvValue = (value: string) => value.replace(/[\r\n]/g, '')
-const createRateLimiter = ({
-  windowMs,
-  maxRequests
-}: {
-  windowMs: number
-  maxRequests: number
-}) => {
-  const hits = new Map<string, { count: number; windowStart: number }>()
-  return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip || 'unknown'
-    const now = Date.now()
-    const entry = hits.get(key)
-
-    if (!entry || now - entry.windowStart > windowMs) {
-      hits.set(key, { count: 1, windowStart: now })
-      return next()
-    }
-
-    if (entry.count >= maxRequests) {
-      return res.status(429).json({
-        error: 'Too many setup attempts. Please try again later.'
-      })
-    }
-
-    entry.count += 1
-    next()
-  }
-}
+const setupRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false
+})
 
 export async function launchSetupServer (port: number = 3000, host: string = '127.0.0.1') {
   const app = express()
@@ -46,7 +25,6 @@ export async function launchSetupServer (port: number = 3000, host: string = '12
     res.send(getSetupHtml())
   })
 
-  const setupRateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 5 })
   app.post('/setup', setupRateLimit, (req, res) => {
     const { BOT_TOKEN, DEV_ID, DB_URL } = req.body
     const sanitizedToken = sanitizeEnvValue(String(BOT_TOKEN || ''))

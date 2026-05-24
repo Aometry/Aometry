@@ -29,6 +29,7 @@
     "discord.js": "^14.25.1",
     "dotenv": "^16.4.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "express-session": "^1.19.0",
     "figlet": "^1.9.4",
     "glob": "^10.4.5",
@@ -55,10 +56,10 @@
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.6.0",
     "globals": "^15.11.0",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3",
-    "nodemon": "^3.1.11"
+    "typescript": "^5.9.3"
   }
 }

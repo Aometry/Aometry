@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express'
+import rateLimit from 'express-rate-limit'
 import { BotClient } from '@/types/discord'
 import Logger from '@/utilities/Logger'
 import fs from 'fs'
@@ -24,35 +25,6 @@ const authenticate =
     }
     next()
   }
-
-const createRateLimiter = ({
-  windowMs,
-  maxRequests
-}: {
-  windowMs: number
-  maxRequests: number
-}) => {
-  const hits = new Map<string, { count: number; windowStart: number }>()
-  return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip || 'unknown'
-    const now = Date.now()
-    const entry = hits.get(key)
-
-    if (!entry || now - entry.windowStart > windowMs) {
-      hits.set(key, { count: 1, windowStart: now })
-      return next()
-    }
-
-    if (entry.count >= maxRequests) {
-      return res.status(429).json({
-        message: 'Too many requests. Please try again later.'
-      })
-    }
-
-    entry.count += 1
-    next()
-  }
-}
 
 /**
  * CORS Middleware
@@ -101,7 +73,12 @@ export function startAdminWebServer (client: BotClient) {
   // Authenticated Endpoints
   const api = express.Router()
   api.use(authenticate(client))
-  const settingsRateLimit = createRateLimiter({ windowMs: 60_000, maxRequests: 30 })
+  const settingsRateLimit = rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false
+  })
 
   // Modules List
   api.get('/modules', (_req, res) => {

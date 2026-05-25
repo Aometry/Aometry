@@ -102,15 +102,14 @@ export async function loadEvents (client: BotClient) {
         delete require.cache[require.resolve(file)]
         imported = require(file)
       }
-      const event: Event<any> = imported?.default || imported
-      if (!event) {
-        table.addRow(file.split('/').pop(), source, '❌ LOAD FAILED')
-        continue
-      }
-
       const fileName = file.split('/').pop() || ''
       const isModule = file.includes('installed_modules')
       const source = isModule ? 'Module' : 'Core'
+      const event: Event<any> = imported?.default || imported
+      if (!event) {
+        table.addRow(fileName, source, '❌ LOAD FAILED')
+        continue
+      }
 
       if (!event.name) {
         table.addRow(fileName, source, '❌ MISSING NAME')

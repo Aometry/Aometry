@@ -41,9 +41,6 @@ function processRoles (
 const event: Event<Events.GuildMemberUpdate> = {
   name: Events.GuildMemberUpdate,
   execute: async (oldMember: GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember, client: BotClient) => {
-    // If the roles haven't changed, we don't care
-    if (oldMember.roles.cache.size === newMember.roles.cache.size) return
-
     const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id))
     const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id))
 

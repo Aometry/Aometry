@@ -61,7 +61,7 @@ export function startAdminWebServer (client: BotClient) {
   app.use(cors(client))
 
   // Root status endpoint (publicly reachable to verify bot is alive)
-  app.get('/api/status', (req, res) => {
+  app.get('/status', (req, res) => {
     res.json({
       status: 'online',
       version: client.botVersion,
@@ -161,7 +161,12 @@ export function startAdminWebServer (client: BotClient) {
     const settingsPath = path.join(process.cwd(), 'settings.json')
     let settings = {}
     if (fs.existsSync(settingsPath)) {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+      try {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+      } catch (error: any) {
+        Logger.error(`Failed to parse settings.json: ${error.message}`, '⚠️')
+        return res.status(500).json({ message: 'Failed to read settings.' })
+      }
     }
     res.json(settings)
   })

@@ -41,8 +41,8 @@ try {
 const config: Config = {
   BOT_TOKEN: process.env.BOT_TOKEN!,
   DB_URL: process.env.DB_URL || null,
-  SYSTEM_LOGS_CHANNEL: process.env.SYSTEM_LOGS_CHANNEL!,
-  LOGS_CHANNEL: process.env.LOGS_CHANNEL!,
+  SYSTEM_LOGS_CHANNEL: process.env.SYSTEM_LOGS_CHANNEL || '',
+  LOGS_CHANNEL: process.env.LOGS_CHANNEL || '',
   DEV_ID: process.env.DEV_ID!,
   WEBUI_PORT: Number(process.env.WEBUI_PORT || 3000),
   API_KEY: process.env.API_KEY || '',

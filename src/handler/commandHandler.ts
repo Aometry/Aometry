@@ -45,6 +45,14 @@ function getFileHash (filePath: string): string {
   return crypto.createHash('sha256').update(content).digest('hex')
 }
 
+function loadCommandModule (filePath: string) {
+  if (filePath.endsWith('.ts')) {
+    return load(filePath)
+  }
+  delete require.cache[require.resolve(filePath)]
+  return require(filePath)
+}
+
 function saveCache () {
   try {
     fs.writeFileSync(CACHE_PATH, JSON.stringify(commandCache, null, 2))
@@ -145,14 +153,8 @@ export async function loadCommands (client: BotClient) {
       // Check if file modified
       if (!cached || cached.hash !== currentHash) {
         // File changed or new
-        if (file.endsWith('.ts')) {
-          const imported = load(file)
-          command = imported.default || imported
-        } else {
-          delete require.cache[require.resolve(file)]
-          const imported = await import(file)
-          command = imported.default || imported
-        }
+        const imported = loadCommandModule(file)
+        command = imported.default || imported
 
         // Update cache
         if (command.data) {
@@ -173,12 +175,7 @@ export async function loadCommands (client: BotClient) {
           commandCache[file] = { hash: currentHash, data: null }
         }
       } else {
-        let imported
-        if (file.endsWith('.ts')) {
-          imported = load(file)
-        } else {
-          imported = await import(file)
-        }
+        const imported = loadCommandModule(file)
         command = imported.default || imported
         // Even if file unchanged, we need to add to commandsArray for structure check comparison against TOTAL registry?
         // Actually, we use 'registryUpdateNeeded' flag. If no files changed structurally, and count is same...

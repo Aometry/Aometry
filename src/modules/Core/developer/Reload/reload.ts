@@ -23,8 +23,22 @@ export default createCommand('reload', 'Reload bot components', (builder) => {
           flags: MessageFlags.Ephemeral
         })
       } else if (subcommand === 'events') {
-        for (const [key, value] of client.events) {
-          client.removeListener(key, value)
+        for (const [key, entry] of client.events) {
+          const eventName = typeof entry === 'object' && entry?.name
+            ? entry.name
+            : key.split('-')[0]
+          const execute = typeof entry === 'object' && entry?.execute
+            ? entry.execute
+            : entry
+          const isRest = typeof entry === 'object' && entry?.rest
+          if (typeof execute !== 'function') {
+            continue
+          }
+          if (isRest && (client.rest as any)?.removeListener) {
+            client.rest.removeListener(eventName, execute)
+          } else {
+            client.removeListener(eventName, execute)
+          }
         }
         await loadEvents(client)
         await interaction.reply({

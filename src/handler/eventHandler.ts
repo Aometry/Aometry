@@ -17,6 +17,12 @@ const load = jiti(__filename, {
   }
 })
 
+interface LoadedEvent {
+  name: string
+  execute: (...args: any[]) => Promise<void> | void
+  rest: boolean
+}
+
 export async function loadEvents (client: BotClient) {
   const table = new Ascii('Events').setHeading(
     chalk.cyan('Event'),
@@ -24,8 +30,24 @@ export async function loadEvents (client: BotClient) {
     chalk.cyan('Status')
   )
 
-  await client.events.clear()
-  client.removeAllListeners()
+  for (const [key, entry] of client.events) {
+    const eventName = typeof entry === 'object' && entry?.name
+      ? entry.name
+      : key.split('-')[0]
+    const execute = typeof entry === 'object' && entry?.execute
+      ? entry.execute
+      : entry
+    const isRest = typeof entry === 'object' && entry?.rest
+    if (typeof execute !== 'function') {
+      continue
+    }
+    if (isRest && (client.rest as any)?.removeListener) {
+      client.rest.removeListener(eventName, execute)
+    } else {
+      client.removeListener(eventName, execute)
+    }
+  }
+  client.events.clear()
 
   // Load from both src/events and installed_modules
   const coreEvents = await loadFiles('src/events')
@@ -78,7 +100,7 @@ export async function loadEvents (client: BotClient) {
       } else {
         // Clear cache for reload
         delete require.cache[require.resolve(file)]
-        imported = await import(file)
+        imported = require(file)
       }
       const event: Event<any> = imported.default || imported
 
@@ -114,7 +136,12 @@ export async function loadEvents (client: BotClient) {
       // For improved debugging, we might want to store them in an array in client.events,
       // but without changing BotClient type definition, we'll stick to standard behavior
       // where the Map just shows "it is loaded".
-      client.events.set(`${event.name}-${file}`, execute)
+      const loadedEvent: LoadedEvent = {
+        name: event.name,
+        execute,
+        rest: Boolean(event.rest)
+      }
+      client.events.set(`${event.name}-${file}`, loadedEvent)
 
       if (event.rest) {
         if (event.once) {

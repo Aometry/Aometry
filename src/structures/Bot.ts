@@ -97,13 +97,13 @@ export default class Bot extends Client implements BotClient {
     // Login
     Logger.loading('Authenticating with Discord...')
 
-    await this.login(this.config.BOT_TOKEN)
-      .then(() => {
-        Logger.success('Discord authentication successful', '🔐')
-      })
-      .catch((err) => {
-        Logger.error('Discord login failed: ' + err.message, '🔐')
-      })
+    try {
+      await this.login(this.config.BOT_TOKEN)
+      Logger.success('Discord authentication successful', '🔐')
+    } catch (err: any) {
+      Logger.error('Discord login failed: ' + err.message, '🔐')
+      throw err
+    }
 
     // Global Error Handling
     this.errorHandler.init()

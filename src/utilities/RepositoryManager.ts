@@ -122,7 +122,8 @@ export default class RepositoryManager {
         throw new Error('Repository does not contain info.json')
       }
 
-      const info = require(infoPath)
+      const infoRaw = fs.readFileSync(infoPath, 'utf-8')
+      const info = JSON.parse(infoRaw)
       const installedModules = this.getInstalledModules()
 
       Logger.subsection(`Installing modules from ${info.name}`)
@@ -270,6 +271,13 @@ export default class RepositoryManager {
         message: `Missing ${tokenVarName} in environment`
       }
     }
+    const sanitizedToken = token.replace(/[\r\n]/g, '')
+    if (!sanitizedToken || sanitizedToken !== token) {
+      return {
+        success: false,
+        message: `Invalid ${tokenVarName} in environment`
+      }
+    }
 
     try {
       this.validateRepoUrl(remoteUrl)
@@ -279,7 +287,7 @@ export default class RepositoryManager {
       this.runGitCommandSync(['-C', modulePath, 'commit', '-m', commitMessage], {
         allowFailure: true
       })
-      const authHeader = Buffer.from(`x-access-token:${token}`).toString('base64')
+      const authHeader = Buffer.from(`x-access-token:${sanitizedToken}`).toString('base64')
       this.runGitCommandSync([
         '-C',
         modulePath,
@@ -572,6 +580,17 @@ export default class RepositoryManager {
     }
 
     if (!['https:', 'ssh:'].includes(parsed.protocol)) {
+      throw new Error('Invalid repository URL')
+    }
+
+    if (parsed.searchParams.has('access_token') || parsed.searchParams.has('token')) {
+      throw new Error('Invalid repository URL')
+    }
+
+    if (parsed.username || parsed.password) {
+      if (parsed.protocol === 'ssh:' && parsed.username === 'git' && !parsed.password) {
+        return
+      }
       throw new Error('Invalid repository URL')
     }
   }

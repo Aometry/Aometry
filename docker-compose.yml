@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  aometry:
+    build: .
+    container_name: aometry
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - WEBUI_PORT=3000
+    env_file:
+      - .env
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./.env:/usr/src/app/.env
+      - ./installed_modules:/usr/src/app/installed_modules
+      - ./logs:/usr/src/app/logs
+    networks:
+      - docker_default
+
+networks:
+  docker_default:
+    external: true

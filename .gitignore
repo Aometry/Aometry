@@ -1,4 +1,19 @@
 # Ignore Discord.js build files
 /node_modules/
 
-.env
+*.env
+
+*.bak
+
+/dist
+
+/installed_modules
+
+/aometry-example-repo
+
+*.sqlite
+
+*.db
+
+.command_cache.json
+/dashboard

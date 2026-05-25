@@ -16,7 +16,7 @@ Aometry uses TypeScript for robust and type-safe development. When creating a mo
 
 ### Prerequisites
 
-- Node.js v16.9.0 or higher
+- Node.js v18 or higher
 - Basic knowledge of TypeScript and Discord.js
 
 ## Migration Quickstart (JS to TS)

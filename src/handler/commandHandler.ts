@@ -12,6 +12,7 @@ import jiti from 'jiti'
 
 const isTs = __filename.endsWith('.ts')
 const load = jiti(__filename, {
+  cache: false,
   alias: {
     '@': path.join(process.cwd(), isTs ? 'src' : 'dist/src'),
     '@installed': path.join(process.cwd(), 'installed_modules')

@@ -21,18 +21,18 @@ export interface ModuleInfo {
   syncRemoteUrl?: string;
   syncBranch?: string;
   syncTokenEnvVar?: string;
-  syncStatus?: "manual" | "synced";
+  syncStatus?: 'manual' | 'synced';
   lastSyncedAt?: string;
   heartbeatEnabled?: boolean;
   updateAvailable?: boolean;
   latestVersionSeen?: string;
   lastUpdateCheckAt?: string;
   lastUpdateResult?:
-    | "up-to-date"
-    | "updated"
-    | "skipped-local-changes"
-    | "error"
-    | "not-configured";
+    | 'up-to-date'
+    | 'updated'
+    | 'skipped-local-changes'
+    | 'error'
+    | 'not-configured';
   lastUpdateError?: string;
   localSnapshotHash?: string;
 }
@@ -48,6 +48,6 @@ export interface LoggerOptions {
   margin?: number;
   borderStyle?: string;
   borderColor?: string;
-  textAlignment?: "left" | "center" | "right";
+  textAlignment?: 'left' | 'center' | 'right';
   title?: string;
 }

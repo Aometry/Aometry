@@ -23,7 +23,7 @@ export async function loadFiles (dirName: string): Promise<string[]> {
 
   // Look for both extensions if in production to support runtime-installed modules
   const extension = isTs ? 'ts' : '{js,ts}'
-  // Use a negative lookbehind if possible or just filter later. 
+  // Use a negative lookbehind if possible or just filter later.
   // Glob doesn't support easy 'exclude' within the pattern for d.ts easily.
   // Actually, Glob 10 supports ignore.
   const pattern = `${process.cwd().replace(/\\/g, '/')}/${baseDir}/**/*.${extension}`

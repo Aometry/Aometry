@@ -9,12 +9,12 @@ import {
   UserContextMenuCommandInteraction,
   MessageContextMenuCommandInteraction,
   ClientEvents,
-  Message,
-} from "discord.js";
-import { Config } from "./index";
-import RepositoryManager from "@/utilities/RepositoryManager";
-import DatabaseManager from "@/utilities/DatabaseManager";
-import RuntimeModuleManager from "@/utilities/RuntimeModuleManager";
+  Message
+} from 'discord.js'
+import { Config } from './index'
+import RepositoryManager from '@/utilities/RepositoryManager'
+import DatabaseManager from '@/utilities/DatabaseManager'
+import RuntimeModuleManager from '@/utilities/RuntimeModuleManager'
 
 export interface BotClient extends Client {
   config: Config;

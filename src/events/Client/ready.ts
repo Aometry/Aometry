@@ -1,58 +1,58 @@
-import { Events, ActivityType } from "discord.js";
-import { createEvent } from "@/builders/EventBuilder";
-import { loadCommands } from "@/handler/commandHandler";
-import Logger from "@/utilities/Logger";
-import handleNcapInteraction from "@installed/governance/ncap/interaction_backup";
-import { startNcapTimerService } from "@installed/governance/ncap/timer_backup";
+import { Events, ActivityType } from 'discord.js'
+import { createEvent } from '@/builders/EventBuilder'
+import { loadCommands } from '@/handler/commandHandler'
+import Logger from '@/utilities/Logger'
+import handleNcapInteraction from '@installed/governance/ncap/interaction_backup'
+import { startNcapTimerService } from '@installed/governance/ncap/timer_backup'
 
 export default createEvent(Events.ClientReady, {
   once: true,
   execute: async ({ client }) => {
-    await loadCommands(client);
+    await loadCommands(client)
 
-    Logger.line();
-    Logger.section("🎉 BOT READY");
+    Logger.line()
+    Logger.section('🎉 BOT READY')
 
     // Ensure user is ready before accessing properties
-    if (!client.user) return;
+    if (!client.user) return
 
     const botInfo = [
-      `${Logger.pastel("Bot Username:")} ${client.user.username}`,
-      `${Logger.pastel("Bot Version:")} v${client.botVersion}`,
-      `${Logger.pastel("Bot Tag:")} ${client.user.tag}`,
-      `${Logger.pastel("Bot ID:")} ${client.user.id}`,
-      "",
-      `${Logger.rainbow("🎧 Now listening to /help")}`,
-    ].join("\n");
+      `${Logger.pastel('Bot Username:')} ${client.user.username}`,
+      `${Logger.pastel('Bot Version:')} v${client.botVersion}`,
+      `${Logger.pastel('Bot Tag:')} ${client.user.tag}`,
+      `${Logger.pastel('Bot ID:')} ${client.user.id}`,
+      '',
+      `${Logger.rainbow('🎧 Now listening to /help')}`
+    ].join('\n')
 
     Logger.box(botInfo, {
       padding: 1,
       margin: 1,
-      borderStyle: "double",
-      borderColor: "green",
-      textAlignment: "left",
-    });
+      borderStyle: 'double',
+      borderColor: 'green',
+      textAlignment: 'left'
+    })
 
-    client.user.setActivity("to /help", { type: ActivityType.Listening });
+    client.user.setActivity('to /help', { type: ActivityType.Listening })
 
-    client.componentHandlers.set("ncap_", handleNcapInteraction);
-    startNcapTimerService(client);
+    client.componentHandlers.set('ncap_', handleNcapInteraction)
+    startNcapTimerService(client)
 
-    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`;
+    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`
 
-    Logger.box(`🔗 ${Logger.crystal("INVITE LINK")}\n\n${inviteUrl}`, {
+    Logger.box(`🔗 ${Logger.crystal('INVITE LINK')}\n\n${inviteUrl}`, {
       padding: 1,
       margin: 1,
-      borderStyle: "round",
-      borderColor: "cyan",
-      textAlignment: "center",
-    });
+      borderStyle: 'round',
+      borderColor: 'cyan',
+      textAlignment: 'center'
+    })
 
-    Logger.rainbow("═".repeat(60));
-    Logger.gradient("🚀 ALL SYSTEMS OPERATIONAL 🚀", ["#00ff88", "#00ccff"]);
-    Logger.rainbow("═".repeat(60));
-    Logger.line();
+    Logger.rainbow('═'.repeat(60))
+    Logger.gradient('🚀 ALL SYSTEMS OPERATIONAL 🚀', ['#00ff88', '#00ccff'])
+    Logger.rainbow('═'.repeat(60))
+    Logger.line()
 
-    client.startRepositoryHeartbeat();
-  },
-});
+    client.startRepositoryHeartbeat()
+  }
+})

@@ -11,7 +11,6 @@ COPY tsconfig.json ./
 COPY .eslintrc.js ./
 COPY .eslintignore ./
 COPY src ./src
-COPY installed_modules ./installed_modules
 
 RUN npm run build
 

@@ -31,7 +31,7 @@ export default class DatabaseManager {
         this.initSqlite()
         return
       } catch (err: unknown) {
-        const error = err as Error;
+        const error = err as Error
         Logger.warning(`MongoDB connection failed: ${error.message}`, '🗄️')
         Logger.info('Falling back to SQLite (Main)...')
       }
@@ -70,7 +70,7 @@ export default class DatabaseManager {
       Logger.success('SQLite database initialized', 'cj')
       return sqlite
     } catch (err: unknown) {
-      const error = err as Error;
+      const error = err as Error
       Logger.error(`SQLite initialization failed: ${error.message}`, '🗄️')
       if (this.type === 'NONE') this.type = 'NONE'
     }

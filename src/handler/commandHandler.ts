@@ -193,7 +193,7 @@ export async function loadCommands (client: BotClient) {
       }
 
       if (!command.data) {
-        // If it was explicitly requested in info.json, it's an error. 
+        // If it was explicitly requested in info.json, it's an error.
         // If it was picked up by glob, it's just a support file we should skip silent.
         // We check if the path is in a 'commands' directory or listed in an info.json.
         // For now, if it's missing data, we only show it as an error if it's not a known ignored type.

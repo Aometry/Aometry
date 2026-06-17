@@ -2,8 +2,6 @@ import { Events, ActivityType } from 'discord.js'
 import { createEvent } from '@/builders/EventBuilder'
 import { loadCommands } from '@/handler/commandHandler'
 import Logger from '@/utilities/Logger'
-import handleNcapInteraction from '@installed/governance/ncap/interaction_backup'
-import { startNcapTimerService } from '@installed/governance/ncap/timer_backup'
 
 export default createEvent(Events.ClientReady, {
   once: true,
@@ -34,9 +32,6 @@ export default createEvent(Events.ClientReady, {
     })
 
     client.user.setActivity('to /help', { type: ActivityType.Listening })
-
-    client.componentHandlers.set('ncap_', handleNcapInteraction)
-    startNcapTimerService(client)
 
     const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`
 

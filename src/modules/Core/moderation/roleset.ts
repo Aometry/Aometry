@@ -243,13 +243,10 @@ export default createCommand(
               return interaction.reply({ content: "Unknown subcommand", flags: MessageFlags.Ephemeral });
           }
         } catch (err: unknown) {
-          const error = err as Error;
-          console.error("Roleset command error:", error.message);
-          await interaction.reply({
-            embeds: [errorEmbed("Error", "An error occurred while managing role sets.")],
-            flags: MessageFlags.Ephemeral,
-          });
+          // Re-throw so the central interactionHandler can log the full error
+          // with a traceable error ID and post it to the system logs channel.
+          throw err
         }
-      });
+      })
   }
-);
+)

@@ -80,8 +80,8 @@ export default createEvent(Events.InteractionCreate, {
                   : ''
 
               const stackPreview = error?.stack
-                ? error.stack.slice(0, 1800)
-                : error?.toString()?.slice(0, 1800) ?? 'No stack available'
+                ? error.stack.slice(0, 1000)
+                : error?.toString()?.slice(0, 1000) ?? 'No stack available'
 
               const logEmbed = new EmbedBuilder()
                 .setTitle(`⚠️ Command Error — ID: \`${errorId}\``)

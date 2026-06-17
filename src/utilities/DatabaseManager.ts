@@ -55,7 +55,7 @@ export default class DatabaseManager {
       // I will add a specific 'sqlite' property for the governance module.
 
       Logger.loading('Initializing SQLite database...')
-      const dbPath = path.join(process.cwd(), 'database.sqlite')
+      const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'database.sqlite')
       const sqlite = new Database(dbPath)
 
       // If we are in fallback mode, this is THE connection.
@@ -199,7 +199,7 @@ export default class DatabaseManager {
     // I'll assume initSqlite was called and I should store it.
     // Let's modify the class slightly to hold `sqliteConnection`.
     if (!this._sqliteConnection) {
-      const dbPath = path.join(process.cwd(), 'database.sqlite')
+      const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'database.sqlite')
       this._sqliteConnection = new Database(dbPath)
       this.initTables(this._sqliteConnection)
     }

@@ -18,6 +18,7 @@ function processRoles (
     for (const set of roleSets) {
       const roleIds: string[] = JSON.parse(set.role_ids)
       if (!roleIds.includes(role.id)) continue
+      if (set.type === 'GROUP' && role.id !== roleIds[0]) continue
 
       for (const id of roleIds) {
         if (id === role.id) continue

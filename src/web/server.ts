@@ -97,14 +97,27 @@ export function startAdminWebServer (client: BotClient) {
   // Module Installation
   api.post('/modules/install', async (req, res) => {
     const url = String(req.body?.url || '')
+    const branch = req.body?.branch ? String(req.body.branch) : undefined
     if (!url) {
       return res.status(400).json({ message: 'Missing repository URL.' })
     }
-    const success = await client.repositoryManager.install(url)
+    const success = await client.repositoryManager.install(url, branch)
     return res.status(success ? 200 : 500).json({
       message: success
         ? `Installed modules from ${url}`
         : `Failed to install from ${url}`
+    })
+  })
+
+  // Acknowledge pending restart
+  api.post('/modules/acknowledge-restart', (req, res) => {
+    const name = String(req.body?.name || '')
+    if (!name) {
+      return res.status(400).json({ message: 'Missing module name.' })
+    }
+    const result = client.repositoryManager.acknowledgeRestart(name)
+    return res.status(result.success ? 200 : 404).json({
+      message: result.message
     })
   })
 

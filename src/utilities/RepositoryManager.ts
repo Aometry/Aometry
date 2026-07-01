@@ -4,15 +4,19 @@ import path from 'path'
 import { execSync, spawn } from 'child_process'
 import { createHash } from 'crypto'
 import { rimraf } from 'rimraf'
+import dotenv from 'dotenv'
+import YAML from 'yaml'
 import Logger from './Logger'
 import { BotClient } from '@/types/discord'
-import { ModuleInfo } from '@/types/index'
+import { ModuleInfo, RequiredEnvVar } from '@/types/index'
 import RuntimeModuleManager from './RuntimeModuleManager'
 
 interface RemoteModuleInfo {
   name: string;
   path: string;
   version?: string;
+  requiredEnv?: RequiredEnvVar[];
+  dockerService?: Record<string, unknown>;
 }
 
 interface RemoteRepoSnapshot {
@@ -108,13 +112,111 @@ export default class RepositoryManager {
     }
   }
 
-  async install (repoUrl: string): Promise<boolean> {
+  acknowledgeRestart (moduleName: string): { success: boolean; message: string } {
+    const installedModules = this.getInstalledModules()
+    const moduleIndex = installedModules.findIndex(
+      (m) => m.name === moduleName
+    )
+    if (moduleIndex === -1) {
+      return {
+        success: false,
+        message: `Module ${moduleName} is not installed`
+      }
+    }
+
+    installedModules[moduleIndex].pendingRestart = false
+    this.saveInstalledModules(installedModules)
+    return {
+      success: true,
+      message: `Acknowledged pending restart for ${moduleName}`
+    }
+  }
+
+  private get envPath (): string {
+    return path.join(process.cwd(), '.env')
+  }
+
+  private get composeOverridePath (): string {
+    return path.join(process.cwd(), 'docker-compose.override.yml')
+  }
+
+  private applyRequiredEnv (
+    moduleName: string,
+    requiredEnv?: RequiredEnvVar[]
+  ): boolean {
+    if (!Array.isArray(requiredEnv) || requiredEnv.length === 0) {
+      return false
+    }
+
+    const existing = fs.existsSync(this.envPath)
+      ? dotenv.parse(fs.readFileSync(this.envPath))
+      : {}
+
+    const missing = requiredEnv.filter(
+      (entry) => entry?.key && !(entry.key in existing)
+    )
+    if (missing.length === 0) {
+      return false
+    }
+
+    const lines = [`\n# Added by module: ${moduleName}`]
+    for (const entry of missing) {
+      lines.push(`${entry.key}=${entry.default ?? ''}`)
+    }
+    fs.appendFileSync(this.envPath, lines.join('\n') + '\n')
+    return true
+  }
+
+  private applyDockerService (
+    moduleName: string,
+    dockerService?: Record<string, unknown>
+  ): boolean {
+    if (!dockerService || typeof dockerService !== 'object') {
+      return false
+    }
+
+    const document = fs.existsSync(this.composeOverridePath)
+      ? YAML.parse(fs.readFileSync(this.composeOverridePath, 'utf-8')) || {}
+      : {}
+    document.services = document.services || {}
+    document.services[moduleName] = dockerService
+
+    fs.writeFileSync(this.composeOverridePath, YAML.stringify(document))
+    return true
+  }
+
+  private removeDockerService (moduleName: string): boolean {
+    if (!fs.existsSync(this.composeOverridePath)) {
+      return false
+    }
+
+    const document = YAML.parse(
+      fs.readFileSync(this.composeOverridePath, 'utf-8')
+    ) || {}
+    if (!document.services || !(moduleName in document.services)) {
+      return false
+    }
+
+    delete document.services[moduleName]
+
+    if (Object.keys(document.services).length === 0) {
+      fs.unlinkSync(this.composeOverridePath)
+    } else {
+      fs.writeFileSync(this.composeOverridePath, YAML.stringify(document))
+    }
+    return true
+  }
+
+  async install (repoUrl: string, branch?: string): Promise<boolean> {
     Logger.loading(`Cloning repository: ${repoUrl}`)
     try {
       if (fs.existsSync(this.tempDir)) {
         await rimraf(this.tempDir)
       }
-      execSync(`git clone ${repoUrl} ${this.tempDir}`, { stdio: 'ignore' })
+      const branchFlag = branch ? `--branch ${branch}` : ''
+      execSync(`git clone ${branchFlag} ${repoUrl} ${this.tempDir}`, {
+        stdio: 'ignore'
+      })
 
       const infoPath = path.join(this.tempDir, 'info.json')
       if (!fs.existsSync(infoPath)) {
@@ -142,6 +244,10 @@ export default class RepositoryManager {
         fs.cpSync(sourcePath, destPath, { recursive: true })
         const localSnapshotHash = await this.computeDirectoryHash(destPath)
 
+        const envChanged = this.applyRequiredEnv(module.name, module.requiredEnv)
+        const composeChanged = this.applyDockerService(module.name, module.dockerService)
+        const pendingRestart = envChanged || composeChanged
+
         installedModules.push({
           name: module.name,
           repository: info.name,
@@ -149,15 +255,25 @@ export default class RepositoryManager {
           version: info.version,
           description: module.description,
           repositoryUrl: repoUrl,
+          syncBranch: branch,
           syncStatus: 'manual',
           heartbeatEnabled: true,
           updateAvailable: false,
           lastUpdateResult: 'up-to-date',
           latestVersionSeen: info.version,
           lastUpdateCheckAt: new Date().toISOString(),
-          localSnapshotHash
+          localSnapshotHash,
+          requiredEnv: module.requiredEnv,
+          dockerService: module.dockerService,
+          pendingRestart
         })
         Logger.success(`Installed module: ${module.name}`, '📦')
+
+        if (pendingRestart) {
+          Logger.warning(
+            `Module ${module.name} added new .env keys or a docker-compose service — review and restart required`
+          )
+        }
 
         if (this.runtimeManager) {
           await this.runtimeManager.loadModule(module.name)
@@ -197,6 +313,13 @@ export default class RepositoryManager {
 
     try {
       await rimraf(modulePath)
+      this.removeDockerService(moduleData.name)
+      if (moduleData.requiredEnv?.length) {
+        const keys = moduleData.requiredEnv.map((entry) => entry.key).join(', ')
+        Logger.info(
+          `Module ${moduleName} declared .env keys that were not removed: ${keys}. Clean up manually if no longer needed.`
+        )
+      }
       installedModules.splice(moduleIndex, 1)
       this.saveInstalledModules(installedModules)
       if (this.runtimeManager) {

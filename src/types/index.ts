@@ -11,6 +11,12 @@ export interface Config {
   installedModules: ModuleInfo[];
 }
 
+export interface RequiredEnvVar {
+  key: string;
+  description?: string;
+  default?: string;
+}
+
 export interface ModuleInfo {
   name: string;
   repository: string;
@@ -35,6 +41,9 @@ export interface ModuleInfo {
     | 'not-configured';
   lastUpdateError?: string;
   localSnapshotHash?: string;
+  requiredEnv?: RequiredEnvVar[];
+  dockerService?: Record<string, unknown>;
+  pendingRestart?: boolean;
 }
 
 export interface RepositoryInfo {

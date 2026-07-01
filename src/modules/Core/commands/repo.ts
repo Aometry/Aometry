@@ -17,6 +17,12 @@ export default createCommand(
               .setDescription('The git repository URL')
               .setRequired(true)
           )
+          .addStringOption((opt) =>
+            opt
+              .setName('branch')
+              .setDescription('Branch to install from (default: repository default branch)')
+              .setRequired(false)
+          )
       )
       .addSubcommand((sub) =>
         sub
@@ -80,12 +86,13 @@ export default createCommand(
 
         if (subcommand === 'install') {
           const url = interaction.options.getString('url', true)
+          const branch = interaction.options.getString('branch') || undefined
           await interaction.reply({
-            content: `⏳ Cloning and installing from ${url}...`,
+            content: `⏳ Cloning and installing from ${url}${branch ? ` (branch: ${branch})` : ''}...`,
             flags: MessageFlags.Ephemeral
           })
 
-          const success = await repoManager.install(url)
+          const success = await repoManager.install(url, branch)
 
           if (success) {
             await interaction.editReply({
